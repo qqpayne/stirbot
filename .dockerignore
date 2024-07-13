@@ -1,0 +1,9 @@
+# ignore everything
+**
+
+# except
+!/app/
+!/scripts/
+!/alembic.ini
+!/poetry.lock
+!/pyproject.toml

@@ -1,0 +1,31 @@
+services:
+  bot:
+    image: "stirbot:${TAG-latest}"
+    env_file:
+      - .env
+    build:
+      context: .
+    volumes:
+      - .:/app
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - app
+
+  db:
+    image: postgres:14-alpine
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - app
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+
+networks:
+  app:
+
+volumes:
+  app-db-data: {}
