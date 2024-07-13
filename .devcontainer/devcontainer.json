@@ -1,0 +1,22 @@
+{
+	"name": "Stirbot Dev Environment",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash"
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-python.mypy-type-checker",
+				"charliermarsh.ruff",
+				"tamasfe.even-better-toml"
+			]
+		}
+	},
+	"postCreateCommand": "sudo chown -R vscode:vscode ./.venv; poetry install --no-root; ./.venv/bin/pre-commit install",
+	"remoteUser": "vscode"
+}

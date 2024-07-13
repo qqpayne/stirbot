@@ -1,0 +1,19 @@
+{
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        },
+        "editor.rulers": [
+            120
+        ],
+    },
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "python.analysis.typeCheckingMode": "strict",
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.envFile": "${workspaceFolder}/.env",
+}
