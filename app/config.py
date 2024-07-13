@@ -21,7 +21,19 @@ class DBSettings(EnvBaseSettings):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
 
 
-class Settings(BotSettings, DBSettings):
+class RedisSettings(EnvBaseSettings):
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str | None = None
+
+    @property
+    def redis_url(self) -> str:
+        if self.REDIS_PASSWORD:
+            return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
+
+
+class Settings(BotSettings, DBSettings, RedisSettings):
     DEBUG: bool = False
 
 
