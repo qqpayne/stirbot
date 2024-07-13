@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "stirbot"
+description = "Best way to book a washing machine in coliving"
+version = "0.1.0"
+repository = "https://github.com/qqpayne/stirbot"
+authors = ["Ivan Akostelov <ivanakostelov@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^3.8.0"
+sqlalchemy = "^2.0.31"
+alembic = "^1.13.2"
+asyncpg = "^0.29.0"
+pydantic = "^2.8.2"
+pydantic-settings = "^2.3.4"
+loguru = "^0.7.2"
+uvloop = "^0.19.0"
+
+[tool.poetry.dev-dependencies]
+ruff = "^0.5.1"
+mypy = "^1.10.1"
+pre-commit = "^3.7.1"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+fix = true
+extend-exclude = ["alembic"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D", "ANN101", "ANN102", "COM812", "ISC001"]
+
+[tool.ruff.lint.isort]
+no-lines-before = ["future", "standard-library"]
+known-local-folder = ["app"]
+
+[tool.mypy]
+python_version = "3.10"
+plugins = "pydantic.mypy"
+disallow_untyped_defs = true
+check_untyped_defs = true
+ignore_missing_imports = false
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_subclassing_any = true
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+namespace_packages = true
+show_absolute_path = true
+show_error_context = true
+pretty = true
+follow_imports_for_stubs = true
+
+[[tool.mypy.overrides]]
+module = "asyncpg.*"
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
