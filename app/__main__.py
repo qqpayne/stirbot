@@ -1,13 +1,15 @@
 import uvloop
 from loguru import logger
 
-from .utils import logging
+from app import middleware
 from app.loader import bot, dp
+from app.utils import logging
 
 
 async def main() -> None:
     logging.setup()
     logger.info("Bot started")
+    middleware.setup(dp)
     await dp.start_polling(bot)  # type: ignore  # noqa: PGH003
 
 
