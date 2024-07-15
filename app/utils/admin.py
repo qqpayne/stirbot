@@ -1,18 +1,28 @@
-from aiogram.utils.link import create_tg_link
+from aiogram.types import User as aioUser
 from loguru import logger
 
 from app.database import Database
+from app.database.models import User
 
 
-# Если будет слишком часто вызываться, то можно добавить кэширование, потому что эти данные почти не меняются
 async def get_admin_link(db: Database) -> str:
     admin_objs = await db.user.get_admins()
-    admin = admin_objs[0]
-    if len(admin_objs) > 1:
-        logger.debug("More than one admin is assigned, using '{id}' as a primary admin", id=admin.id)
-    return create_tg_link("user", id=admin.id)
+
+    admins_with_username = list(filter(lambda x: x.username, admin_objs))
+    if len(admins_with_username) == 0:
+        logger.error("No admins with username")
+        return ""
+
+    admin = admins_with_username[0]
+    if len(admins_with_username) > 1:
+        logger.debug(f"More than one admin is assigned, using {admin} as a primary admin")
+
+    return "@" + admin.username  # type: ignore  # noqa: PGH003
 
 
-async def get_admin_text_link(db: Database, link_text: str) -> str:
-    link = await get_admin_link(db)
-    return f"<a href='{link}'>{link_text}</a>"
+# Так как ссылки по айди не работают, то нужно отображать username админов.
+# Эта информация может меняться, поэтому нужно иногда её обновлять. Это удобно делать в аутентификационном фильтре.
+async def update_admin_info(user: User, db: Database, new_info: aioUser) -> None:
+    if user.is_admin:
+        logger.debug(f"Updaing admin {user} info")
+        await db.user.update(user.id, new_info)

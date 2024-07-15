@@ -53,3 +53,20 @@ class CRUDUser(CRUDBase[User]):
         user.is_admin = False
         await self.sess.commit()
         return user
+
+    async def update(self, id: int, data: aiogramUser) -> User:  # noqa: A002
+        db_obj = self.model(**data.model_dump(include=set(User.__table__.columns.keys())))
+
+        existing = await self.get(id)
+        if existing is None:
+            msg = "user with given id is absent"
+            raise ValueError(msg)
+
+        for field in User.__table__.columns.keys():  # noqa: SIM118
+            if field in db_obj.__dict__ and getattr(existing, field) != getattr(db_obj, field):
+                setattr(existing, field, db_obj.__dict__[field])
+
+        await self.sess.commit()
+        await self.sess.refresh(existing)
+
+        return existing

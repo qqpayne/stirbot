@@ -4,6 +4,7 @@ from loguru import logger
 
 from app.database import Database
 from app.database.models import User
+from app.utils.admin import update_admin_info
 
 
 class NotAUserFilter(BaseFilter):
@@ -36,6 +37,9 @@ class UserFilter(BaseFilter):
                 f"Received message from non-authenticated user {message.from_user.full_name} id={message.from_user.id}"
             )
             return False
+
+        # Для поддержания консистентности между БД бота и БД телеграмма. Делать это для всех юзеров слишком дорого.
+        await update_admin_info(user, db, message.from_user)
 
         return {"user_data": user}
 

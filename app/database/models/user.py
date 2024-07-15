@@ -1,4 +1,3 @@
-from aiogram.utils.link import create_tg_link
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base, big_int_pk, created_at
@@ -22,10 +21,9 @@ class User(Base):
 
     @property
     def clickable_name(self) -> str:
-        name_with_link = f"<a href='{create_tg_link('user', id=self.id)}'>{self.full_name}</a>"
         if self.username is not None:
-            return f"{name_with_link} (@{self.username})"
-        return name_with_link
+            return f"{self.full_name} (@{self.username})"
+        return self.full_name
 
     def __repr__(self) -> str:
         if self.username is not None:
