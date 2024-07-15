@@ -14,6 +14,10 @@
    ```bash
    docker-compose up -d
    ```
+4. Выдача и лишение прав администратора для пользователя (который уже имеется в БД бота) производится с помощью команды:
+   ```bash
+   docker-compose exec -e "PYTHONPATH=/app" bot python scripts/admin.py {uid} [--demote]
+   ```
 
 ## Контрибьютинг
 
@@ -54,6 +58,10 @@
 3. Применение всех миграций базы данных
    ```bash
    alembic upgrade head
+   ```
+4. Выдать права администратора пользователю с указанным Telegram ID (он должен уже быть в БД бота)
+   ```bash
+   python scripts/admin.py {uid}
    ```
 
 #### Без Dev Container

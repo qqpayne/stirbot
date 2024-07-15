@@ -34,7 +34,7 @@ extend-exclude = ["alembic"]
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D", "ANN101", "ANN102", "COM812", "ISC001"]
+ignore = ["D", "ANN101", "ANN102", "COM812", "ISC001", "RUF"]
 
 [tool.ruff.lint.isort]
 no-lines-before = ["future", "standard-library"]

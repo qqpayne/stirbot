@@ -29,6 +29,7 @@ def upgrade() -> None:
         sa.Column("username", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(), server_default=sa.text("TIMEZONE('utc', now())"), nullable=False),
         sa.Column("is_admin", sa.Boolean(), nullable=False),
+        sa.Column("is_approved", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("id"),
     )
