@@ -3,13 +3,14 @@ from loguru import logger
 
 from app import handlers, middleware
 from app.loader import bot, dp
-from app.utils import logging
+from app.utils import commands, logging
 
 
 async def on_startup() -> None:
     logger.info("Bot starting...")
     middleware.setup(dp)
     handlers.setup(dp)
+    await commands.setup(bot)
     logger.info("Bot started")
 
 

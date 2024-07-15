@@ -19,16 +19,25 @@ SIGNUP_WAIT_TEXT = (
     "Ожидайте подтверждения аккаунта. Можете вновь обратиться к <a href='{admin_link}'>администратору</a>."
 )
 
-HELP_TEXT = """
-Доступны следующие команды:
-/start - старт работы с ботом
-/help - перечислить доступные команды
-/rules - правила пользования и записи
-/booking - меню для записи
-/notifications - управление уведомлениями о записи
-/report - сообщить о ошибке в боте или нарушении правил пользования
-"""
-ADMIN_HELP_TEXT = HELP_TEXT + "\nАдминистраторские команды:\n/new_users - подтверждение новых аккаунтов"
+commands = {
+    "help": "список команд",
+    "booking": "меню для записи",
+    "notifications": "управление уведомлениями",
+    "rules": "правила пользования",
+    "report": "сообщить о нарушении или ошибке",
+}
+admin_commands = {
+    "new_users": "подтверждение новых аккаунтов",
+}
+
+HELP_TEXT = "Доступны следующие команды:\n" + "\n".join(
+    [f"/{command} - {description}" for command, description in commands.items()]
+)
+ADMIN_HELP_TEXT = (
+    HELP_TEXT
+    + "\n\nАдминистраторские команды:\n"
+    + "\n".join([f"/{command} - {description}" for command, description in admin_commands.items()])
+)
 
 RULES_TEXT = """
 Правила пользования стиральными машинами:
