@@ -24,12 +24,15 @@ async def signup_handler(message: types.Message, db: Database) -> None:
     """
     Добавляет пользователя в базу данных и отправляет его писать администратору для подтверждения аккаунта.
     """
-    if message.from_user is None:
+    usr = message.from_user
+    if usr is None:
         await message.answer(NOT_A_USER_ERROR_TEXT)
         return
 
     # Авторизованные пользователи не должны попадать в этот хэндлер, можно не проверять отсутствие пользователя в базе
-    new_user = await db.user.create(message.from_user)
+    new_user = await db.user.create(
+        {"id": usr.id, "first_name": usr.first_name, "last_name": usr.last_name, "username": usr.username}
+    )
     logger.info("New user registered: {user}", user=new_user)
 
     await message.answer(SIGNUP_TEXT.format(admin_link=await get_admin_link(db)))

@@ -25,4 +25,6 @@ async def get_admin_link(db: Database) -> str:
 async def update_admin_info(user: User, db: Database, new_info: aioUser) -> None:
     if user.is_admin:
         logger.debug(f"Updating admin {user} info")
-        await db.user.update(user.id, new_info)
+        await db.user.update(
+            user.id, {"username": new_info.username, "first_name": new_info.first_name, "last_name": new_info.last_name}
+        )

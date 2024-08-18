@@ -1,19 +1,25 @@
-from aiogram.types import User as aiogramUser
+from typing import TypedDict
+
 from sqlalchemy import select
 
 from .base import CRUDBase
 from app.database.models.user import User
 
 
-class CRUDUser(CRUDBase[User]):
-    async def create(self, data: aiogramUser) -> User:
-        db_obj = self.model(**data.model_dump(include=set(User.__table__.columns.keys())))
-        self.sess.add(db_obj)
-        await self.sess.commit()
+class UserCreateData(TypedDict):
+    id: int
+    first_name: str
+    last_name: str | None
+    username: str | None
 
-        await self.sess.refresh(db_obj)
-        return db_obj
 
+class UserUpdateData(TypedDict, total=False):
+    first_name: str
+    last_name: str | None
+    username: str | None
+
+
+class CRUDUser(CRUDBase[User, UserCreateData, UserUpdateData]):
     async def get_admins(self) -> list[User]:
         query = select(self.model).where(self.model.is_admin == True)  # noqa: E712
         result = await self.sess.execute(query)
@@ -53,20 +59,3 @@ class CRUDUser(CRUDBase[User]):
         user.is_admin = False
         await self.sess.commit()
         return user
-
-    async def update(self, id: int, data: aiogramUser) -> User:  # noqa: A002
-        db_obj = self.model(**data.model_dump(include=set(User.__table__.columns.keys())))
-
-        existing = await self.get(id)
-        if existing is None:
-            msg = "user with given id is absent"
-            raise ValueError(msg)
-
-        for field in User.__table__.columns.keys():  # noqa: SIM118
-            if field in db_obj.__dict__ and getattr(existing, field) != getattr(db_obj, field):
-                setattr(existing, field, db_obj.__dict__[field])
-
-        await self.sess.commit()
-        await self.sess.refresh(existing)
-
-        return existing

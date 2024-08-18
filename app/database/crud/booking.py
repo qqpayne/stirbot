@@ -1,18 +1,21 @@
 import datetime as dt
+from typing import TypedDict
 
 from .base import CRUDBase
 from app.database.models import Booking
 
 
-class CRUDBooking(CRUDBase[Booking]):
-    async def create(self, data: dict[str, dt.datetime | int | str]) -> Booking:
-        if ("user_id" not in data) or ("place_id" not in data) or ("start" not in data) or ("end" not in data):
-            msg = "not enough data to create booking"
-            raise ValueError(msg)
+class BookingCreateData(TypedDict):
+    user_id: int
+    place_id: str
+    start: dt.datetime
+    end: dt.datetime
 
-        db_obj = self.model(**data)
-        self.sess.add(db_obj)
-        await self.sess.commit()
 
-        await self.sess.refresh(db_obj)
-        return db_obj
+class BookingUpdateData(TypedDict, total=False):
+    start: dt.datetime
+    end: dt.datetime
+
+
+class CRUDBooking(CRUDBase[Booking, BookingCreateData, BookingUpdateData]):
+    pass
