@@ -4,11 +4,18 @@ from loguru import logger
 
 from app.database import Database
 from app.filters import NotAUserFilter
-from app.strings import NOT_A_USER_ERROR_TEXT, SIGNUP_TEXT, SUGGEST_SIGNUP_TEXT, UNKNOWN_USER_START_TEXT
+from app.strings import (
+    NOT_A_USER_ERROR_TEXT,
+    SIGNUP_TEXT,
+    SUGGEST_SIGNUP_TEXT,
+    UNAUTH_CALLBACK_TEXT,
+    UNKNOWN_USER_START_TEXT,
+)
 from app.utils.admin import get_admin_link
 
 router = Router(name="unauthenticated")
 router.message.filter(NotAUserFilter())
+router.callback_query.filter(NotAUserFilter())
 
 
 @router.message(CommandStart())
@@ -44,3 +51,22 @@ async def any_message_handler(message: types.Message) -> None:
     Предлагает пользователю зарегистрироваться в ответ на любые сообщения.
     """
     await message.answer(SUGGEST_SIGNUP_TEXT)
+
+
+@router.callback_query()
+async def any_callback_handler(callback: types.CallbackQuery) -> None:
+    """
+    Предлагает пользователю зарегистрироваться в ответ на коллбэк.
+    """
+    if not isinstance(callback.message, types.Message):
+        logger.error("Strange unauthenticated callback without message")
+        return
+
+    logger.warning(
+        "Received unauthenticated callback from {user} id={user_id}",
+        user=callback.from_user.full_name,
+        user_id=callback.from_user.id,
+    )
+    await callback.message.edit_text(UNAUTH_CALLBACK_TEXT)
+    await callback.message.answer(SUGGEST_SIGNUP_TEXT)
+    await callback.answer()

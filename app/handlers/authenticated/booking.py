@@ -6,6 +6,7 @@ from app.keyboards.booking import BookingFSM, booking_dialog, edit_booking_dialo
 
 router = Router(name="booking")
 router.message.filter(MagicData(F.user_data.is_approved))
+router.callback_query.filter(MagicData(F.user_data.is_approved))
 router.include_routers(booking_dialog, new_booking_dialog, edit_booking_dialog)
 
 
