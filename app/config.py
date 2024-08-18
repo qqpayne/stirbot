@@ -1,3 +1,6 @@
+import zoneinfo
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine.url import URL
 
@@ -8,6 +11,19 @@ class EnvBaseSettings(BaseSettings):
 
 class BotSettings(EnvBaseSettings):
     BOT_TOKEN: str
+    TIMEZONE: str
+
+    @field_validator("TIMEZONE")
+    @classmethod
+    def timezone_should_be_available(cls, v: str) -> str:
+        if v not in zoneinfo.available_timezones():
+            msg = f"{v} timezone is not available, check zoneinfo.available_timezones() for available timezones"
+            raise ValueError(msg)
+        return v
+
+    @property
+    def tz(self) -> zoneinfo.ZoneInfo:
+        return zoneinfo.ZoneInfo(self.TIMEZONE)
 
 
 class DBSettings(EnvBaseSettings):

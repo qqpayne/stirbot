@@ -102,7 +102,7 @@ async def on_day_confirmation_success(
     await message.answer(
         NEW_BOOKING_RESULT_TEXT.format(
             place=manager.dialog_data["place"],  # type: ignore  # noqa: PGH003
-            date=day.strftime("%d %B"),
+            date=day.strftime("%d.%m"),
             start_time=start.strftime("%H:%M"),
             end_time=end.strftime("%H:%M"),
         )
@@ -117,7 +117,7 @@ async def available_intervals_getter(
 ) -> dict[str, str | list[tuple[str, str]]]:
     day = dt.datetime.strptime(dialog_manager.dialog_data["day"], "%x%z")  # type: ignore  # noqa: PGH003
     return {
-        "date": day.strftime("%d %B"),
+        "date": day.strftime("%d.%m"),
         "place": dialog_manager.dialog_data["place"],  # type: ignore  # noqa: PGH003
         "free_intervals": [("11:00", "15:00"), ("17:00", "20:00")],  # TODO: получать на основе данных в БД
     }

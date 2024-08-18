@@ -68,6 +68,9 @@ NEW_BOOKING_AVAILABLE_INTERVALS_TEXT = "{date} в {place} доступны ин�
 NEW_BOOKING_INTERVAL_HELP_TEXT = (
     'Для записи отправьте сообщение в формате {начало записи} - {конец записи}, например "11:00 - 12:30"'
 )
+INCORRECT_INTERVAL_FORMAT_TEXT = "неправильный формат"
+INCORRECT_INTERVAL_TIME_TEXT = "введено некорректное время"
+NEGATIVE_INTERVAL_TIME_TEXT = "отрицательный интервал времени"
 NEW_BOOKING_RESULT_TEXT = "Записал в {place} на {date} с {start_time} до {end_time}"
 
 EDIT_BOOKING_LIST_TEXT = "Список ваших активных записей:"
@@ -76,3 +79,12 @@ EDIT_BOOKING_DELETE_ACTION_TEXT = "Редактировать"
 
 BACK_TEXT = "↩️ Назад"
 ERROR_TEXT = "Ошибка: {error}"
+
+TODAY_TEXT = "Сегодня"
+MON_TEXT = "Пн"
+TUE_TEXT = "Вт"
+WED_TEXT = "Ср"
+THU_TEXT = "Чт"
+FRI_TEXT = "Пт"
+SAT_TEXT = "Сб"
+SUN_TEXT = "Вс"
