@@ -1,6 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, big_int_pk, created_at
+
+if TYPE_CHECKING:
+    from .booking import Booking
 
 
 class User(Base):
@@ -12,6 +17,8 @@ class User(Base):
 
     is_admin: Mapped[bool] = mapped_column(default=False)
     is_approved: Mapped[bool] = mapped_column(default=False)
+
+    bookings: Mapped[list["Booking"]] = relationship(back_populates="user")
 
     @property
     def full_name(self) -> str:

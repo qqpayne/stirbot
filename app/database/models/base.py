@@ -1,12 +1,13 @@
 import datetime
 from typing import Annotated, Any
 
-from sqlalchemy import BigInteger, text
+from sqlalchemy import BigInteger, DateTime, text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, declared_attr, mapped_column
 
 int_pk = Annotated[int, mapped_column(primary_key=True, unique=True, autoincrement=False)]
 big_int_pk = Annotated[int, mapped_column(primary_key=True, unique=True, autoincrement=False, type_=BigInteger)]
+datetime_tz = Annotated[datetime.datetime, mapped_column(type_=DateTime(timezone=True))]
 created_at = Annotated[datetime.datetime, mapped_column(server_default=text("TIMEZONE('utc', now())"))]
 
 
