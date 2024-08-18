@@ -55,3 +55,22 @@ NEW_USER_ALREADY_APPROVED_TEXT = "Доступ для пользователя {
 NEW_USER_DENIED_TEXT = "Запрос доступа пользователя {user_name} был отклонен."
 NEW_USER_APPROVED_TEXT = "Доступ для пользователя {user_name} был одобрен."
 NEW_USER_ERROR_TEXT = "Произошла ошибка! Попробуйте еще раз."
+
+BOOKING_CHOOSE_ACTION_TEXT = "Выберите действие:"
+BOOKING_ACTION_NEW_TEXT = "Создать новую запись"
+BOOKING_ACTION_EDIT_TEXT = "Просмотр и удаление записей"
+
+NEW_BOOKING_CHOOSE_PLACE_TEXT = "Выберите место:"
+NEW_BOOKING_CHOOSE_DAY_TEXT = "Выберите день:"
+NEW_BOOKING_AVAILABLE_INTERVALS_TEXT = "{date} в {place} доступны интервалы:"
+NEW_BOOKING_INTERVAL_HELP_TEXT = (
+    'Для записи отправьте сообщение в формате {начало записи} - {конец записи}, например "11:00 - 12:30"'
+)
+NEW_BOOKING_RESULT_TEXT = "Записал в {place} на {date} с {start_time} до {end_time}"
+
+EDIT_BOOKING_LIST_TEXT = "Список ваших активных записей:"
+EDIT_BOOKING_DELETE_TEXT = "Выберите запись для отмены:"
+EDIT_BOOKING_DELETE_ACTION_TEXT = "Редактировать"
+
+BACK_TEXT = "↩️ Назад"
+ERROR_TEXT = "Ошибка: {error}"
