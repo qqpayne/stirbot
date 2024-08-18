@@ -24,5 +24,5 @@ async def get_admin_link(db: Database) -> str:
 # Эта информация может меняться, поэтому нужно иногда её обновлять. Это удобно делать в аутентификационном фильтре.
 async def update_admin_info(user: User, db: Database, new_info: aioUser) -> None:
     if user.is_admin:
-        logger.debug(f"Updaing admin {user} info")
+        logger.debug(f"Updating admin {user} info")
         await db.user.update(user.id, new_info)
