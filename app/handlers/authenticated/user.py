@@ -3,7 +3,7 @@ from aiogram.filters import Command, CommandStart, MagicData
 from aiogram_dialog import DialogManager, StartMode
 
 from app.database import Database
-from app.keyboards.booking import BookingFSM, booking_dialog, edit_booking_dialog, new_booking_dialog
+from app.dialogs import BookingFSM, setup_booking_dialog
 from app.strings import HELP_TEXT, REGISTERED_USER_START_TEXT, REPORT_TEXT, RULES_TEXT
 from app.utils.admin import get_admin_link
 
@@ -11,7 +11,7 @@ router = Router(name="user")
 router.message.filter(MagicData(F.user_data.is_approved))
 router.callback_query.filter(MagicData(F.user_data.is_approved))
 
-router.include_routers(new_booking_dialog, booking_dialog, edit_booking_dialog)
+setup_booking_dialog(router)
 
 
 @router.message(CommandStart())
@@ -51,4 +51,4 @@ async def booking_handler(_: types.Message, dialog_manager: DialogManager) -> No
     """
     Начинает booking-диалог, отправляя пользователю меню с выбором действия: создание новой записи или просмотр грядущих
     """
-    await dialog_manager.start(BookingFSM.choosing_action, mode=StartMode.RESET_STACK)  # type: ignore  # noqa: PGH003
+    await dialog_manager.start(BookingFSM.main, mode=StartMode.RESET_STACK)  # type: ignore  # noqa: PGH003
