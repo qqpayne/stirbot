@@ -39,7 +39,7 @@ async def on_place_selected(callback: CallbackQuery, select: Any, manager: Dialo
     await manager.switch_to(NewBookingFSM.choosing_day)
 
 
-async def avilable_places_getter(db: Database, **_: dict[str, Any]) -> dict[str, list[Place]]:
+async def available_places_getter(db: Database, **_: dict[str, Any]) -> dict[str, list[Place]]:
     return {"places": await db.place.get_all()}
 
 
@@ -57,7 +57,7 @@ choose_place_window = Window(
     ),
     Cancel(Const(BACK_TEXT)),
     state=NewBookingFSM.choosing_place,
-    getter=avilable_places_getter,
+    getter=available_places_getter,
 )
 
 
@@ -73,6 +73,14 @@ async def week_items_getter(**_: dict[str, Any]) -> dict[str, list[tuple[str, dt
     return {"week_items": generate_week_items()}
 
 
+def back_predicate(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -> bool:  # noqa: ARG001, ANN401
+    return not dialog_manager.dialog_data.get("place_selection_skipped", False)  # type: ignore  # noqa: PGH003
+
+
+def cancel_predicate(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -> bool:  # noqa: ARG001, ANN401
+    return dialog_manager.dialog_data.get("place_selection_skipped", False)  # type: ignore  # noqa: PGH003
+
+
 choose_day_window = Window(
     Const(NEW_BOOKING_CHOOSE_DAY_TEXT),
     Layout(
@@ -85,7 +93,8 @@ choose_day_window = Window(
         ),
         layout=(1, 3, 3),
     ),
-    Back(Const(BACK_TEXT)),
+    Back(Const(BACK_TEXT), when=back_predicate),
+    Cancel(Const(BACK_TEXT), when=cancel_predicate),
     state=NewBookingFSM.choosing_day,
     getter=week_items_getter,
 )
@@ -187,4 +196,20 @@ choose_interval_window = Window(
 
 ####
 
-new_booking_dialog = Dialog(choose_place_window, choose_day_window, choose_interval_window)
+
+async def try_skip_place_selection(_: Any, manager: DialogManager) -> None:  # noqa: ANN401
+    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
+    assert isinstance(db, Database)  # noqa: S101
+
+    places = await db.place.get_all()
+    if len(places) > 1:
+        return
+
+    manager.dialog_data["place"] = places[0].id  # type: ignore  # noqa: PGH003
+    manager.dialog_data["place_selection_skipped"] = True  # type: ignore  # noqa: PGH003
+    await manager.switch_to(NewBookingFSM.choosing_day)
+
+
+new_booking_dialog = Dialog(
+    choose_place_window, choose_day_window, choose_interval_window, on_start=try_skip_place_selection
+)
