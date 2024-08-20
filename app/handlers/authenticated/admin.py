@@ -1,4 +1,4 @@
-from aiogram import F, Router, types
+from aiogram import Bot, F, Router, types
 from aiogram.filters import Command, CommandStart, MagicData
 from loguru import logger
 
@@ -15,6 +15,8 @@ from app.strings import (
     NEW_USER_ERROR_TEXT,
     NEW_USER_TEXT,
     NO_NEW_USERS_TEXT,
+    NOTIFY_APPROVED_USER_TEXT,
+    NOTIFY_DENIED_USER_TEXT,
 )
 
 router = Router(name="admin")
@@ -54,7 +56,9 @@ async def new_users_command_handler(message: types.Message, db: Database) -> Non
 
 
 @router.callback_query(NewUserCBF.filter(), CalbackAdminFilter())
-async def new_users_callback_handler(callback: types.CallbackQuery, callback_data: NewUserCBF, db: Database) -> None:
+async def new_users_callback_handler(
+    callback: types.CallbackQuery, callback_data: NewUserCBF, db: Database, bot: Bot
+) -> None:
     if not isinstance(callback.message, types.Message):
         logger.error("Something is not right with new users callback")
         return
@@ -76,10 +80,12 @@ async def new_users_callback_handler(callback: types.CallbackQuery, callback_dat
         user = await db.user.approve(callback_data.id)
         logger.info(f"Approved access for {user}")
         await callback.message.edit_text(NEW_USER_APPROVED_TEXT.format(user_name=user.clickable_name))
+        await bot.send_message(user.id, NOTIFY_APPROVED_USER_TEXT)
     elif callback_data.action is NewUserAction.deny:
         user = await db.user.remove(callback_data.id)
         logger.info(f"Denied access for {user}")
         await callback.message.edit_text(NEW_USER_DENIED_TEXT.format(user_name=user.clickable_name))
+        await bot.send_message(user.id, NOTIFY_DENIED_USER_TEXT)
     else:
         logger.error("Strange callback data in new users callback")
         await callback.message.edit_text(NEW_USER_ERROR_TEXT)

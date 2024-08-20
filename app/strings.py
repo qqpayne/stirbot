@@ -59,6 +59,9 @@ NEW_USER_DENIED_TEXT = "Запрос доступа пользователя {us
 NEW_USER_APPROVED_TEXT = "Доступ для пользователя {user_name} был одобрен."
 NEW_USER_ERROR_TEXT = "Произошла ошибка! Попробуйте еще раз."
 
+NOTIFY_APPROVED_USER_TEXT = "Ваш аккаунт был подтвержден! Начать работу с ботом можно с команды /help"
+NOTIFY_DENIED_USER_TEXT = "Ваш аккаунт был отклонен! Если вы считаете что произошла ошибка, попробуйте зарегистрироваться снова с помощью команды /signup"  # noqa: E501
+
 BOOKING_CHOOSE_ACTION_TEXT = "Выберите действие:"
 BOOKING_ACTION_NEW_TEXT = "Создать новую запись"
 BOOKING_ACTION_EDIT_TEXT = "Просмотр и удаление записей"
