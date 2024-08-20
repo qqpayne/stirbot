@@ -3,6 +3,7 @@ from typing import Literal
 
 from app.config import settings
 from app.strings import (
+    EMPTY_INTERVAL_TIME_TEXT,
     FRI_TEXT,
     INCORRECT_INTERVAL_FORMAT_TEXT,
     INCORRECT_INTERVAL_TIME_TEXT,
@@ -58,6 +59,10 @@ def parse_time_interval(text: str) -> tuple[dt.datetime, dt.datetime]:
         msg = NEGATIVE_INTERVAL_TIME_TEXT
         raise ValueError(msg)
 
+    if start_dt == end_dt:
+        msg = EMPTY_INTERVAL_TIME_TEXT
+        raise ValueError(msg)
+
     return (start_dt, end_dt)
 
 
@@ -74,3 +79,11 @@ def generate_week_items() -> list[tuple[str, dt.datetime]]:
     day_names = [f"{pair[0]} ({pair[1]})" for pair in zip(_day_names, weekdays, strict=True)]
 
     return [(TODAY_TEXT, today)] + list(zip(day_names, next_six_days, strict=True))
+
+
+def serialize_date(datetime: dt.datetime) -> str:
+    return dt.datetime.strftime(datetime, "%x%z")
+
+
+def deserialize_date(datetime_str: str) -> dt.datetime:
+    return dt.datetime.strptime(datetime_str, "%x%z")

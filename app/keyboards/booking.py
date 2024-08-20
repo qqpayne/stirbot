@@ -1,30 +1,43 @@
 import datetime as dt
 from typing import Any
 
+from aiogram import F
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Back, Cancel, Column, Select, Start, SwitchTo
+from aiogram_dialog.widgets.kbd import Back, Cancel, Column, Group, Select, Start, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format, List
+from loguru import logger
 
+from app.config import settings
 from app.database import Database
+from app.database.models import Booking, Place, User
 from app.strings import (
     BACK_TEXT,
     BOOKING_ACTION_EDIT_TEXT,
     BOOKING_ACTION_NEW_TEXT,
     BOOKING_CHOOSE_ACTION_TEXT,
+    DELETE_ANOTHERS_BOOKING_TEXT,
+    DELETE_NONEXISTING_BOOKING_TEXT,
+    DELETE_PAST_BOOKING_TEXT,
     EDIT_BOOKING_DELETE_ACTION_TEXT,
     EDIT_BOOKING_DELETE_TEXT,
+    EDIT_BOOKING_EMPTY_TEXT,
+    EDIT_BOOKING_LIST_ITEM_TEXT,
     EDIT_BOOKING_LIST_TEXT,
     ERROR_TEXT,
+    EXIT_TEXT,
     NEW_BOOKING_AVAILABLE_INTERVALS_TEXT,
     NEW_BOOKING_CHOOSE_DAY_TEXT,
     NEW_BOOKING_CHOOSE_PLACE_TEXT,
     NEW_BOOKING_INTERVAL_HELP_TEXT,
+    NEW_BOOKING_NO_INTERVALS_LEFT_TEXT,
     NEW_BOOKING_RESULT_TEXT,
+    OCCUPIED_INTERVAL_TIME_TEXT,
 )
-from app.utils.datetime import generate_week_items, parse_time_interval
+from app.utils.booking import check_intersections, get_free_intervals
+from app.utils.datetime import deserialize_date, generate_week_items, parse_time_interval, serialize_date
 from app.utils.layout_widget import Layout
 
 
@@ -43,30 +56,17 @@ class EditBookingFSM(StatesGroup):
     removing_booking = State()
 
 
-async def get_user_bookings(callback: CallbackQuery, widget: Any, manager: DialogManager) -> None:  # noqa: ARG001, ANN401
-    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
-    assert isinstance(db, Database)  # noqa: S101, необходимо чтоб заткнуть тайпчекер
-
-    if manager.event.from_user is None:
-        msg = "non-user message"
-        raise ValueError(msg)
-
-    user = await db.user.get(manager.event.from_user.id)  # type: ignore # noqa: F841, PGH003
-    # TODO: получать список записей пользователя из БД
-
-    manager.dialog_data["user_bookings"] = ["2к 15.07 16:00-17:30", "2к 15.07 19:00-19:30"]  # type: ignore  # noqa: PGH003
+async def on_exit(callback: CallbackQuery, button: Any, manager: DialogManager) -> None:  # noqa: ARG001, ANN401
+    if isinstance(callback.message, Message):
+        await callback.message.delete()
 
 
 booking_dialog = Dialog(
     Window(
         Const(BOOKING_CHOOSE_ACTION_TEXT),
         Start(Const(BOOKING_ACTION_NEW_TEXT), id="new", state=NewBookingFSM.choosing_place),
-        Start(
-            Const(BOOKING_ACTION_EDIT_TEXT),
-            id="edit",
-            state=EditBookingFSM.viewing_booking,
-            on_click=get_user_bookings,
-        ),
+        Start(Const(BOOKING_ACTION_EDIT_TEXT), id="edit", state=EditBookingFSM.viewing_booking),
+        Cancel(Const(EXIT_TEXT), on_click=on_exit),
         state=BookingFSM.choosing_action,
     ),
 )
@@ -83,6 +83,7 @@ async def on_day_selected(callback: CallbackQuery, select: Any, manager: DialogM
 
 
 async def on_day_confirmation_error(message: Message, widget: Any, manager: DialogManager, error: ValueError) -> None:  # noqa: ARG001, ANN401
+    logger.info(f"Error in day confirmation (user: {manager.middleware_data['user_data']}) {error}")  # type: ignore  # noqa: PGH003
     await message.answer(ERROR_TEXT.format(error=error))
 
 
@@ -92,16 +93,33 @@ async def on_day_confirmation_success(
     manager: DialogManager,
     parsed_data: tuple[dt.datetime, dt.datetime],
 ) -> None:
-    day = dt.datetime.strptime(manager.dialog_data["day"], "%x%z")  # type: ignore  # noqa: PGH003
-    start = dt.datetime.combine(day.date(), parsed_data[0].time())
-    end = dt.datetime.combine(day.date(), parsed_data[1].time())
+    # затыкаем тайпчекер (в aiogram_dialog есть Unknown типы из-за которых линтер превращает код в гирлянду)
+    serialized_day: str = manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
+    place_id: str = manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
+    user: User = manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
+    assert isinstance(serialized_day, str)  # noqa: S101
+    assert isinstance(place_id, str)  # noqa: S101
+    assert isinstance(user, User)  # noqa: S101
+    assert isinstance(db, Database)  # noqa: S101
 
-    # TODO: валидировать что интервал действительно свободен в БД
-    # TODO: создавать запись в БД
+    day = deserialize_date(serialized_day)
+    start = dt.datetime.combine(day.date(), parsed_data[0].time(), day.tzinfo)
+    end = dt.datetime.combine(day.date(), parsed_data[1].time(), day.tzinfo)
+
+    existing_bookings = await db.booking.get_by_location(place_id, day)
+
+    if check_intersections(start, end, existing_bookings) is True:
+        logger.info(f"Error in check intersection (user: {user}) - from {start} to {end}")
+        await message.answer(ERROR_TEXT.format(error=OCCUPIED_INTERVAL_TIME_TEXT))
+        return
+
+    booking = await db.booking.create({"start": start, "end": end, "user_id": user.id, "place_id": place_id})
+    logger.info(f"New booking created: {booking}")
 
     await message.answer(
         NEW_BOOKING_RESULT_TEXT.format(
-            place=manager.dialog_data["place"],  # type: ignore  # noqa: PGH003
+            place=place_id,
             date=day.strftime("%d.%m"),
             start_time=start.strftime("%H:%M"),
             end_time=end.strftime("%H:%M"),
@@ -111,38 +129,63 @@ async def on_day_confirmation_success(
 
 
 async def available_intervals_getter(
-    dialog_manager: DialogManager,
-    db: Database,  # noqa: ARG001
-    **_: dict[str, Any],
-) -> dict[str, str | list[tuple[str, str]]]:
-    day = dt.datetime.strptime(dialog_manager.dialog_data["day"], "%x%z")  # type: ignore  # noqa: PGH003
+    dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
+) -> dict[str, list[tuple[dt.time, dt.time]]]:
+    serialized_day: str = dialog_manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
+    place: str = dialog_manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
+    assert isinstance(serialized_day, str)  # noqa: S101
+    assert isinstance(place, str)  # noqa: S101
+
+    day = deserialize_date(serialized_day)
+    existing_bookings = await db.booking.get_by_location(place, day)
+
+    place_object = await db.place.get(place)
+    if place_object is None:
+        logger.warning(f"Unexisting place {place}")
+        return {"free_intervals": []}
+
+    return {"free_intervals": get_free_intervals(place_object, existing_bookings)}
+
+
+async def date_place_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, str]:
     return {
-        "date": day.strftime("%d.%m"),
+        "date": deserialize_date(dialog_manager.dialog_data["day"]).strftime("%d.%m"),  # type: ignore  # noqa: PGH003
         "place": dialog_manager.dialog_data["place"],  # type: ignore  # noqa: PGH003
-        "free_intervals": [("11:00", "15:00"), ("17:00", "20:00")],  # TODO: получать на основе данных в БД
     }
+
+
+async def avilable_places_getter(db: Database, **_: dict[str, Any]) -> dict[str, list[Place]]:
+    return {"places": await db.place.get_all()}
+
+
+async def week_items_getter(**_: dict[str, Any]) -> dict[str, list[tuple[str, dt.datetime]]]:
+    return {"week_items": generate_week_items()}
 
 
 new_booking_dialog = Dialog(
     Window(
         Const(NEW_BOOKING_CHOOSE_PLACE_TEXT),
-        Select(
-            Format("{item}"),
-            items=["1к (стир.)", "2к (стир.)", "1137"],  # TODO: получать список из БД
-            item_id_getter=lambda x: x,
-            id="s_places",
-            on_click=on_place_selected,
+        Group(
+            Select(
+                Format("{item.id}"),
+                items="places",
+                item_id_getter=lambda x: x.id,
+                id="s_places",
+                on_click=on_place_selected,
+            ),
+            width=3,
         ),
         Cancel(Const(BACK_TEXT)),
         state=NewBookingFSM.choosing_place,
+        getter=avilable_places_getter,
     ),
     Window(
         Const(NEW_BOOKING_CHOOSE_DAY_TEXT),
         Layout(
             Select(
                 Format("{item[0]}"),
-                items=generate_week_items(),
-                item_id_getter=lambda x: dt.datetime.strftime(x[1], "%x%z"),
+                items="week_items",
+                item_id_getter=lambda x: serialize_date(x[1]),
                 id="s_days",
                 on_click=on_day_selected,
             ),
@@ -150,11 +193,16 @@ new_booking_dialog = Dialog(
         ),
         Back(Const(BACK_TEXT)),
         state=NewBookingFSM.choosing_day,
+        getter=week_items_getter,
     ),
     Window(
-        Format(NEW_BOOKING_AVAILABLE_INTERVALS_TEXT),
-        List(Format("— {item[0]} - {item[1]}"), items="free_intervals"),
-        Const(NEW_BOOKING_INTERVAL_HELP_TEXT),
+        Format(NEW_BOOKING_AVAILABLE_INTERVALS_TEXT, when=F["free_intervals"].len() > 0),
+        Format(NEW_BOOKING_NO_INTERVALS_LEFT_TEXT, when=F["free_intervals"].len() == 0),
+        List(
+            Format("— {item[0].hour:02d}:{item[0].minute:02d} - {item[1].hour:02d}:{item[1].minute:02d}"),
+            items="free_intervals",
+        ),
+        Const(NEW_BOOKING_INTERVAL_HELP_TEXT, when=F["free_intervals"].len() > 0),
         TextInput(
             id="interval",
             type_factory=parse_time_interval,
@@ -163,55 +211,91 @@ new_booking_dialog = Dialog(
         ),
         Back(Const(BACK_TEXT)),
         state=NewBookingFSM.confirming_day,
-        getter=available_intervals_getter,
+        getter=[date_place_getter, available_intervals_getter],
     ),
 )
 
 
 async def on_delete_booking_selected(
     callback: CallbackQuery,
-    select: Any,  # noqa: ANN401
+    select: Any,  # noqa: ARG001, ANN401
     manager: DialogManager,
-    item_id: str,  # noqa: ARG001
+    item_id: str,
 ) -> None:
     db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
-    assert isinstance(db, Database)  # noqa: S101, необходимо чтоб заткнуть тайпчекер
-    # TODO: удалить запись item_id из БД
+    user: User = manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    assert isinstance(db, Database)  # noqa: S101
+    assert isinstance(user, User)  # noqa: S101
 
-    # обновляем список записей пользователя
-    await get_user_bookings(callback, select, manager)
+    error_flag = False
+    booking = await db.booking.get(int(item_id))
+    if booking is None:
+        logger.warning(f"Unexisting booking with id {item_id}")
+        await callback.answer(ERROR_TEXT.format(error=DELETE_NONEXISTING_BOOKING_TEXT))
+        error_flag = True
+    elif booking.user_id != user.id:
+        logger.warning(f"User {user.id} tried to delete another's {booking}")
+        await callback.answer(ERROR_TEXT.format(error=DELETE_ANOTHERS_BOOKING_TEXT))
+        error_flag = True
+    elif booking.local_start <= dt.datetime.now(tz=settings.tz):
+        logger.info(f"User {user.id} tried to delete past or ongoing booking {booking}")
+        await callback.answer(ERROR_TEXT.format(error=DELETE_PAST_BOOKING_TEXT))
+        error_flag = True
+
+    if error_flag is False:
+        await db.booking.remove(int(item_id))
+        logger.info(f"Deleted booking {booking}")
     await manager.switch_to(EditBookingFSM.viewing_booking)
+
+
+async def user_bookings_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, list[Booking] | bool]:
+    user: User = dialog_manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    assert isinstance(user, User)  # noqa: S101
+
+    bookings: list[Booking] = await user.awaitable_attrs.bookings
+    bookings.sort(key=lambda x: x.local_start)
+
+    actual_booking = list(filter(lambda x: x.local_end >= dt.datetime.now(tz=settings.tz), bookings))
+    editable_booking = list(filter(lambda x: x.local_start > dt.datetime.now(tz=settings.tz), bookings))
+
+    return {"user_bookings": actual_booking, "editable_bookings": editable_booking}
 
 
 edit_booking_dialog = Dialog(
     Window(
-        Const(EDIT_BOOKING_LIST_TEXT),
+        Const(EDIT_BOOKING_LIST_TEXT, when=F["user_bookings"].len() > 0),
+        Const(EDIT_BOOKING_EMPTY_TEXT, when=F["user_bookings"].len() == 0),
         Column(
             Select(
-                Format("{item}"),
+                Format(EDIT_BOOKING_LIST_ITEM_TEXT),
                 items="user_bookings",
-                item_id_getter=lambda x: x,
+                item_id_getter=lambda x: x.id,
                 id="s_bookings",
             )
         ),
         SwitchTo(
-            Const("❌ " + EDIT_BOOKING_DELETE_ACTION_TEXT), id="del_booking", state=EditBookingFSM.removing_booking
+            Const("❌ " + EDIT_BOOKING_DELETE_ACTION_TEXT),
+            id="del_booking",
+            state=EditBookingFSM.removing_booking,
+            when=F["editable_bookings"].len() > 0,
         ),
         Cancel(Const(BACK_TEXT)),
         state=EditBookingFSM.viewing_booking,
+        getter=user_bookings_getter,
     ),
     Window(
         Const(EDIT_BOOKING_DELETE_TEXT),
         Column(
             Select(
-                Format("❌ {item}"),
-                items="user_bookings",
-                item_id_getter=lambda x: x,
+                Format("❌ " + EDIT_BOOKING_LIST_ITEM_TEXT),
+                items="editable_bookings",
+                item_id_getter=lambda x: x.id,
                 id="s_bookings_del",
                 on_click=on_delete_booking_selected,
             )
         ),
         Back(Const(BACK_TEXT)),
         state=EditBookingFSM.removing_booking,
+        getter=user_bookings_getter,
     ),
 )

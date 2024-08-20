@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, created_at, datetime_tz
+from app.config import settings
 
 if TYPE_CHECKING:
     from .place import Place
@@ -20,3 +21,18 @@ class Booking(Base):
 
     user: Mapped["User"] = relationship(back_populates="bookings")
     place: Mapped["Place"] = relationship(back_populates="bookings")
+
+    @property
+    def local_start(self) -> datetime_tz:
+        return self.start.astimezone(settings.tz)
+
+    @property
+    def local_end(self) -> datetime_tz:
+        return self.end.astimezone(settings.tz)
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.place_id} "
+            f"from {self.local_start.strftime('%x %H:%M')} till {self.local_end.strftime('%x %H:%M')} "
+            f"by {self.user_id} (id:{self.id})"
+        )

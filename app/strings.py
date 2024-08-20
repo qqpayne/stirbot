@@ -66,18 +66,31 @@ BOOKING_ACTION_EDIT_TEXT = "Просмотр и удаление записей"
 NEW_BOOKING_CHOOSE_PLACE_TEXT = "Выберите место:"
 NEW_BOOKING_CHOOSE_DAY_TEXT = "Выберите день:"
 NEW_BOOKING_AVAILABLE_INTERVALS_TEXT = "{date} в {place} доступны интервалы:"
+NEW_BOOKING_NO_INTERVALS_LEFT_TEXT = "{date} в {place} нет свободного времени для записи"
 NEW_BOOKING_INTERVAL_HELP_TEXT = (
     'Для записи отправьте сообщение в формате {начало записи} - {конец записи}, например "11:00 - 12:30"'
 )
 INCORRECT_INTERVAL_FORMAT_TEXT = "неправильный формат"
 INCORRECT_INTERVAL_TIME_TEXT = "введено некорректное время"
 NEGATIVE_INTERVAL_TIME_TEXT = "отрицательный интервал времени"
+EMPTY_INTERVAL_TIME_TEXT = "пустой интервал времени"
+OCCUPIED_INTERVAL_TIME_TEXT = "этот промежуток времени занят"
 NEW_BOOKING_RESULT_TEXT = "Записал в {place} на {date} с {start_time} до {end_time}"
 
 EDIT_BOOKING_LIST_TEXT = "Список ваших активных записей:"
+EDIT_BOOKING_EMPTY_TEXT = "У вас нет активных записей"
+EDIT_BOOKING_LIST_ITEM_TEXT = (
+    "{item.place_id} на {item.local_start.day:02d}.{item.local_start.month:02d} "
+    "с {item.local_start.hour:02d}:{item.local_start.minute:02d} "
+    "до {item.local_end.hour:02d}:{item.local_end.minute:02d}"
+)
 EDIT_BOOKING_DELETE_TEXT = "Выберите запись для отмены:"
 EDIT_BOOKING_DELETE_ACTION_TEXT = "Редактировать"
+DELETE_NONEXISTING_BOOKING_TEXT = "такой записи не существует"
+DELETE_ANOTHERS_BOOKING_TEXT = "эта запись принадлежит другому пользователю"
+DELETE_PAST_BOOKING_TEXT = "нельзя удалить идущую или уже прошедшую запись"
 
+EXIT_TEXT = "Выйти"
 BACK_TEXT = "↩️ Назад"
 ERROR_TEXT = "Ошибка: {error}"
 
