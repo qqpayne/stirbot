@@ -93,6 +93,7 @@ DELETE_PAST_BOOKING_TEXT = "нельзя удалить идущую или уж
 EXIT_TEXT = "Выйти"
 BACK_TEXT = "↩️ Назад"
 ERROR_TEXT = "Ошибка: {error}"
+DIALOG_MANAGER_ERROR_TEXT = "проблемы на серверной стороне, введите команду еще раз"
 
 TODAY_TEXT = "Сегодня"
 MON_TEXT = "Пн"

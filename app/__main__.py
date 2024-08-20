@@ -1,19 +1,23 @@
-from typing import Any
-
 import uvloop
+from aiogram import types
 from aiogram.filters import ExceptionTypeFilter
 from aiogram_dialog import DialogManager, setup_dialogs
-from aiogram_dialog.api.exceptions import UnknownState
+from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 from loguru import logger
 
 from app import handlers, middleware
 from app.loader import bot, dp
+from app.strings import DIALOG_MANAGER_ERROR_TEXT, ERROR_TEXT
 from app.utils import commands, logging
 
 
-async def on_unknown_state(event: Any, dialog_manager: DialogManager) -> None:  # noqa: ARG001, ANN401
-    logger.error("Restarting dialog")
+async def on_dialog_manager_error(event: types.ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: ARG001, ANN401
+    logger.error(f"Restarting dialog: {event.exception}")
     await dialog_manager.reset_stack()
+    if event.update.message is not None:
+        await event.update.message.answer(ERROR_TEXT.format(error=DIALOG_MANAGER_ERROR_TEXT))
+    elif (event.update.callback_query is not None) and isinstance(event.update.callback_query.message, types.Message):
+        await event.update.callback_query.message.answer(ERROR_TEXT.format(error=DIALOG_MANAGER_ERROR_TEXT))
 
 
 async def on_startup() -> None:
@@ -22,7 +26,8 @@ async def on_startup() -> None:
     handlers.setup(dp)
     await commands.setup(bot)
     setup_dialogs(dp)
-    dp.errors.register(on_unknown_state, ExceptionTypeFilter(UnknownState))
+    dp.errors.register(on_dialog_manager_error, ExceptionTypeFilter(UnknownState))
+    dp.errors.register(on_dialog_manager_error, ExceptionTypeFilter(UnknownIntent))
     logger.info("Bot started")
 
 
