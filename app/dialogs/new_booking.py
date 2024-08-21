@@ -21,6 +21,7 @@ from app.strings import (
     NEW_BOOKING_CHOOSE_PLACE_TEXT,
     NEW_BOOKING_INTERVAL_HELP_TEXT,
     NEW_BOOKING_NO_INTERVALS_LEFT_TEXT,
+    NEW_BOOKING_NO_PLACES_AVAILABLE_TEXT,
     NEW_BOOKING_RESULT_TEXT,
     NONWORKING_INTERVAL_TIME_TEXT,
     OCCUPIED_INTERVAL_TIME_TEXT,
@@ -42,11 +43,14 @@ async def on_place_selected(callback: CallbackQuery, select: Any, manager: Dialo
 
 
 async def available_places_getter(db: Database, **_: dict[str, Any]) -> dict[str, list[Place]]:
-    return {"places": await db.place.get_all()}
+    places = await db.place.get_all()
+    places.sort(key=lambda x: x.id)
+    return {"places": places}
 
 
 choose_place_window = Window(
-    Const(NEW_BOOKING_CHOOSE_PLACE_TEXT),
+    Const(NEW_BOOKING_CHOOSE_PLACE_TEXT, when=F["places"].len() > 0),
+    Const(NEW_BOOKING_NO_PLACES_AVAILABLE_TEXT, when=F["places"].len() == 0),
     Group(
         Select(
             Format("{item.id}"),
@@ -227,12 +231,10 @@ async def try_skip_place_selection(_: Any, manager: DialogManager) -> None:  # n
     assert isinstance(db, Database)  # noqa: S101
 
     places = await db.place.get_all()
-    if len(places) > 1:
-        return
-
-    manager.dialog_data["place"] = places[0].id  # type: ignore  # noqa: PGH003
-    manager.dialog_data["place_selection_skipped"] = True  # type: ignore  # noqa: PGH003
-    await manager.switch_to(NewBookingFSM.choosing_day)
+    if len(places) == 1:
+        manager.dialog_data["place"] = places[0].id  # type: ignore  # noqa: PGH003
+        manager.dialog_data["place_selection_skipped"] = True  # type: ignore  # noqa: PGH003
+        await manager.switch_to(NewBookingFSM.choosing_day)
 
 
 new_booking_dialog = Dialog(

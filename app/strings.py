@@ -67,6 +67,7 @@ BOOKING_ACTION_NEW_TEXT = "Создать новую запись"
 BOOKING_ACTION_EDIT_TEXT = "Просмотр и удаление записей"
 
 NEW_BOOKING_CHOOSE_PLACE_TEXT = "Выберите место:"
+NEW_BOOKING_NO_PLACES_AVAILABLE_TEXT = "Нет доступных мест для записи. Попробуйте вернуться позже."
 NEW_BOOKING_CHOOSE_DAY_TEXT = "Выберите день:"
 NEW_BOOKING_AVAILABLE_INTERVALS_TEXT = "{date} в {place} доступны интервалы:"
 NEW_BOOKING_NO_INTERVALS_LEFT_TEXT = "{date} в {place} нет свободного времени для записи"
