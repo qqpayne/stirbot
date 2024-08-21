@@ -26,8 +26,15 @@ from app.strings import (
     NONWORKING_INTERVAL_TIME_TEXT,
     OCCUPIED_INTERVAL_TIME_TEXT,
 )
-from app.utils.booking import check_intersections, get_free_intervals
-from app.utils.datetime import deserialize_date, generate_week_items, parse_time_interval, serialize_date
+from app.utils.datetime import (
+    TimeInterval,
+    check_interval_intersections,
+    deserialize_date,
+    generate_week_items,
+    get_free_intervals,
+    parse_time_interval,
+    serialize_date,
+)
 from app.utils.layout_widget import Layout
 
 
@@ -118,28 +125,37 @@ async def date_place_getter(dialog_manager: DialogManager, **_: dict[str, Any]) 
 
 async def available_intervals_getter(
     dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
-) -> dict[str, list[tuple[dt.time, dt.time]]]:
+) -> dict[str, list[TimeInterval]]:
     serialized_day: str = dialog_manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
     place: str = dialog_manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
     assert isinstance(serialized_day, str)  # noqa: S101
     assert isinstance(place, str)  # noqa: S101
 
     day = deserialize_date(serialized_day)
-    existing_bookings = await db.booking.get_by_location(place, day)
+    bookings = await db.booking.get_by_location(place, day)
 
     place_object = await db.place.get(place)
     if place_object is None:
         logger.warning(f"Unexisting place {place}")
         return {"free_intervals": []}
 
-    return {"free_intervals": get_free_intervals(place_object, existing_bookings)}
+    free_intervals = get_free_intervals(
+        TimeInterval(place_object.opening_datetime(day), place_object.closing_datetime(day)),
+        [TimeInterval(x.start, x.end) for x in bookings],
+    )
+
+    return {
+        "free_intervals": [
+            TimeInterval(x.start.astimezone(day.tzinfo), x.end.astimezone(day.tzinfo)) for x in free_intervals
+        ]
+    }
 
 
 async def on_choose_interval_success(
     message: Message,
     widget: Any,  # noqa: ARG001, ANN401
     manager: DialogManager,
-    parsed_data: tuple[dt.datetime, dt.datetime],
+    parsed_data: TimeInterval,
 ) -> None:
     # затыкаем тайпчекер (в aiogram_dialog есть Unknown типы из-за которых линтер превращает код в гирлянду)
     serialized_day: str = manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
@@ -159,28 +175,23 @@ async def on_choose_interval_success(
         return
 
     day = deserialize_date(serialized_day)
-    start_time = parsed_data[0].time()
-    end_time = parsed_data[1].time()
-
-    def shift_day_if(condition: bool) -> dt.timedelta:  # noqa: FBT001
-        return dt.timedelta(days=1) if condition else dt.timedelta()
+    start_time = parsed_data.start.time()
+    end_time = parsed_data.end.time()
 
     end_midnight = end_time == dt.time.fromisoformat("00:00")
     start = dt.datetime.combine(day.date(), start_time, day.tzinfo)
-    end = dt.datetime.combine(day.date() + shift_day_if(end_midnight), end_time, day.tzinfo)
+    end = dt.datetime.combine(
+        day.date() + (dt.timedelta(days=1) if end_midnight else dt.timedelta()), end_time, day.tzinfo
+    )
 
-    close_midnight = place.closing_hour == dt.time.fromisoformat("00:00")
-    place_opening = dt.datetime.combine(day.date(), place.opening_hour, day.tzinfo)
-    place_closing = dt.datetime.combine(day.date() + shift_day_if(close_midnight), place.closing_hour, day.tzinfo)
-
-    if start < place_opening or end > place_closing:
+    if start < place.opening_datetime(day) or end > place.closing_datetime(day):
         logger.debug(f"Error in range check for {place_id}, from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=NONWORKING_INTERVAL_TIME_TEXT))
         return
 
     existing_bookings = await db.booking.get_by_location(place_id, day)
 
-    if check_intersections(start, end, existing_bookings) is True:
+    if check_interval_intersections(start, end, [TimeInterval(x.start, x.end) for x in existing_bookings]) is True:
         logger.info(f"Error in check intersection (user: {user}) - from {start} to {end}")
         await message.answer(ERROR_TEXT.format(error=OCCUPIED_INTERVAL_TIME_TEXT))
         return
@@ -208,7 +219,7 @@ choose_interval_window = Window(
     Format(NEW_BOOKING_AVAILABLE_INTERVALS_TEXT, when=F["free_intervals"].len() > 0),
     Format(NEW_BOOKING_NO_INTERVALS_LEFT_TEXT, when=F["free_intervals"].len() == 0),
     List(
-        Format("— {item[0].hour:02d}:{item[0].minute:02d} - {item[1].hour:02d}:{item[1].minute:02d}"),
+        Format("— {item.start.hour:02d}:{item.start.minute:02d} - {item.end.hour:02d}:{item.end.minute:02d}"),
         items="free_intervals",
     ),
     Const(NEW_BOOKING_INTERVAL_HELP_TEXT, when=F["free_intervals"].len() > 0),

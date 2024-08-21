@@ -17,5 +17,16 @@ class Place(Base):
     closing_hour: Mapped[datetime.time]
     bookings: Mapped[list["Booking"]] = relationship(back_populates="place")
 
+    def opening_datetime(self, day: datetime.datetime) -> datetime.datetime:
+        return datetime.datetime.combine(day.date(), self.opening_hour, day.tzinfo)
+
+    def closing_datetime(self, day: datetime.datetime) -> datetime.datetime:
+        close_midnight = self.closing_hour == datetime.time.fromisoformat("00:00")
+        return datetime.datetime.combine(
+            day.date() + (datetime.timedelta(days=1) if close_midnight else datetime.timedelta()),
+            self.closing_hour,
+            day.tzinfo,
+        )
+
     def __repr__(self) -> str:
         return f"{self.id} (from {self.opening_hour} to {self.closing_hour})"

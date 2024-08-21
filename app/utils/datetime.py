@@ -1,4 +1,5 @@
 import datetime as dt
+from dataclasses import dataclass
 from typing import Literal
 
 from app.config import settings
@@ -16,6 +17,12 @@ from app.strings import (
     TUE_TEXT,
     WED_TEXT,
 )
+
+
+@dataclass
+class TimeInterval:
+    start: dt.datetime
+    end: dt.datetime
 
 
 # Можно использовать локали и %a в strftime, НО локали усложняют деплой и отличаются от дистрибутива к дистрибутиву
@@ -37,7 +44,7 @@ def translate_weekday(weekday: Literal["0", "1", "2", "3", "4", "5", "6"]) -> st
             return SAT_TEXT
 
 
-def parse_time_interval(text: str) -> tuple[dt.datetime, dt.datetime]:
+def parse_time_interval(text: str) -> TimeInterval:
     """
     Парсит текст вида "%H:%M - %H:%M" на два datetime'а или возвращает ValueError в случае неудачи
     """
@@ -66,7 +73,80 @@ def parse_time_interval(text: str) -> tuple[dt.datetime, dt.datetime]:
         msg = EMPTY_INTERVAL_TIME_TEXT
         raise ValueError(msg)
 
-    return (start_dt, end_dt)
+    return TimeInterval(start_dt, end_dt)
+
+
+def merge_time_intervals(intervals: list[TimeInterval]) -> list[TimeInterval]:
+    """
+    Объединяет интервалы, если у них совпадает даты конца и начала. Также сортирует список по дате старта интервала.
+    """
+    if len(intervals) == 0:
+        return []
+
+    intervals.sort(key=lambda x: x.start)
+    merged = [intervals[0]]
+
+    for interval in intervals[1:]:
+        cur_start, cur_end = interval.start, interval.end
+        last_start, last_end = merged[-1].start, merged[-1].end
+
+        if cur_start == last_end:
+            merged[-1] = TimeInterval(last_start, cur_end)
+        else:
+            merged.append(interval)
+
+    return merged
+
+
+def get_free_intervals(frame: TimeInterval, occupied_intervals: list[TimeInterval]) -> list[TimeInterval]:
+    """
+    Генерирует список свободных интервалов, попадающих в frame, на основе занятых интервалов из occupied_intervals.
+    """
+    merged_intervals = merge_time_intervals(occupied_intervals)
+    if len(merged_intervals) == 0:
+        return [frame]
+
+    intervals: list[TimeInterval] = []
+
+    interval_start = frame.start
+    start_idx = 0
+    if merged_intervals[0].start.time() == frame.start:
+        interval_start = merged_intervals[0].end
+        start_idx = 1
+
+    # свободный интервал - это время между концом одного уже занятого интервала и началом другого
+    for idx in range(start_idx, len(merged_intervals)):
+        interval_end = merged_intervals[idx].start
+        intervals.append(TimeInterval(interval_start, interval_end))
+        interval_start = merged_intervals[idx].end
+
+    # если последняя запись кончается до конца фрейма, то добавляем интервал с конца этой записи до конца фрейма
+    if interval_start != frame.end:
+        intervals.append(TimeInterval(interval_start, frame.end))
+
+    return intervals
+
+
+def check_interval_intersections(start: dt.datetime, end: dt.datetime, intervals: list[TimeInterval]) -> bool:
+    """
+    Возвращает True в случае если интервал от start до end накладываются на существующие интервалы из intervals.
+    """
+    if start >= end:
+        return True
+
+    intervals.sort(key=lambda x: x.start)
+
+    for interval in intervals:
+        if interval.end < start:
+            continue
+        if interval.start > end:
+            break
+
+        # внутри входящего интервала не должно оказаться начала или конца какого-либо существующего интервала
+        if (start <= interval.start < end) or (start < interval.end <= end):
+            return True
+
+    return False
 
 
 def generate_week_items() -> list[tuple[str, dt.datetime]]:
