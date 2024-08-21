@@ -29,18 +29,25 @@ async def main() -> None:
         msg = "Can't update and remove place at the same time"
         raise ValueError(msg)
 
+    closing_midnight = args.closing_hour == dt.time.fromisoformat("00:00")
+    if args.opening_hour >= args.closing_hour and not closing_midnight:
+        msg = "Opening hour should be less than closing hour"
+        raise ValueError(msg)
+
     async with sessionmaker() as session:
         db = Database(session=session)
         if args.remove:
             place = await db.place.remove(args.name)
             print(f"{place.id} has been deleted")  # noqa: T201
         elif args.update:
-            data = {"opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
-            place = await db.place.update(args.name, data)
+            place = await db.place.update(
+                args.name, {"opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
+            )
             print(f"{place} has been updated")  # noqa: T201
         else:
-            data = {"id": args.name, "opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
-            place = await db.place.create(data)
+            place = await db.place.create(
+                {"id": args.name, "opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
+            )
             print(f"{place} has been created")  # noqa: T201
 
 

@@ -15,12 +15,14 @@ from app.database.models import Place, User
 from app.strings import (
     BACK_TEXT,
     ERROR_TEXT,
+    INEXISTING_PLACE_TEXT,
     NEW_BOOKING_AVAILABLE_INTERVALS_TEXT,
     NEW_BOOKING_CHOOSE_DAY_TEXT,
     NEW_BOOKING_CHOOSE_PLACE_TEXT,
     NEW_BOOKING_INTERVAL_HELP_TEXT,
     NEW_BOOKING_NO_INTERVALS_LEFT_TEXT,
     NEW_BOOKING_RESULT_TEXT,
+    NONWORKING_INTERVAL_TIME_TEXT,
     OCCUPIED_INTERVAL_TIME_TEXT,
 )
 from app.utils.booking import check_intersections, get_free_intervals
@@ -145,9 +147,32 @@ async def on_choose_interval_success(
     assert isinstance(user, User)  # noqa: S101
     assert isinstance(db, Database)  # noqa: S101
 
+    place = await db.place.get(place_id)
+    if place is None:
+        logger.warning(f"Unexisting place {place_id}")
+        await message.answer(ERROR_TEXT.format(error=INEXISTING_PLACE_TEXT))
+        await manager.done()
+        return
+
     day = deserialize_date(serialized_day)
-    start = dt.datetime.combine(day.date(), parsed_data[0].time(), day.tzinfo)
-    end = dt.datetime.combine(day.date(), parsed_data[1].time(), day.tzinfo)
+    start_time = parsed_data[0].time()
+    end_time = parsed_data[1].time()
+
+    def shift_day_if(condition: bool) -> dt.timedelta:  # noqa: FBT001
+        return dt.timedelta(days=1) if condition else dt.timedelta()
+
+    end_midnight = end_time == dt.time.fromisoformat("00:00")
+    start = dt.datetime.combine(day.date(), start_time, day.tzinfo)
+    end = dt.datetime.combine(day.date() + shift_day_if(end_midnight), end_time, day.tzinfo)
+
+    close_midnight = place.closing_hour == dt.time.fromisoformat("00:00")
+    place_opening = dt.datetime.combine(day.date(), place.opening_hour, day.tzinfo)
+    place_closing = dt.datetime.combine(day.date() + shift_day_if(close_midnight), place.closing_hour, day.tzinfo)
+
+    if start < place_opening or end > place_closing:
+        logger.debug(f"Error in range check for {place_id}, from {start_time} to {end_time}")
+        await message.answer(ERROR_TEXT.format(error=NONWORKING_INTERVAL_TIME_TEXT))
+        return
 
     existing_bookings = await db.booking.get_by_location(place_id, day)
 

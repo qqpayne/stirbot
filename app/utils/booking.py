@@ -38,7 +38,11 @@ def get_free_intervals(place: Place, day_bookings: list[Booking]) -> list[tuple[
     if len(merged_bookings) == 0:
         return [(place.opening_hour, place.closing_hour)]
 
-    if merged_bookings[0].local_start.date() != merged_bookings[-1].local_end.date():
+    # если место работает до полуночи и последняя запись кончается в 00:00, то даты могут отличаться на один день
+    last_booking_ends_midnight = merged_bookings[-1].local_end.time() == dt.time.fromisoformat("00:00")
+    if merged_bookings[0].local_start.date() != (
+        merged_bookings[-1].local_end.date() - (dt.timedelta(days=1) if last_booking_ends_midnight else dt.timedelta())
+    ):
         msg = "day_bookings span multiple days"
         raise ValueError(msg)
 

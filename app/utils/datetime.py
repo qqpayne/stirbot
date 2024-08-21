@@ -55,6 +55,9 @@ def parse_time_interval(text: str) -> tuple[dt.datetime, dt.datetime]:
         msg = INCORRECT_INTERVAL_TIME_TEXT
         raise ValueError(msg) from err
 
+    if end_dt.time() == dt.time.fromisoformat("00:00"):
+        end_dt = end_dt + dt.timedelta(days=1)
+
     if (end_dt - start_dt).days < 0:
         msg = NEGATIVE_INTERVAL_TIME_TEXT
         raise ValueError(msg)

@@ -77,6 +77,8 @@ INCORRECT_INTERVAL_FORMAT_TEXT = "неправильный формат"
 INCORRECT_INTERVAL_TIME_TEXT = "введено некорректное время"
 NEGATIVE_INTERVAL_TIME_TEXT = "отрицательный интервал времени"
 EMPTY_INTERVAL_TIME_TEXT = "пустой интервал времени"
+INEXISTING_PLACE_TEXT = "выбранное место не существует"
+NONWORKING_INTERVAL_TIME_TEXT = "указанный интервал выходит за пределы времени работы"
 OCCUPIED_INTERVAL_TIME_TEXT = "этот промежуток времени занят"
 NEW_BOOKING_RESULT_TEXT = "Записал в {place} на {date} с {start_time} до {end_time}"
 
