@@ -29,6 +29,7 @@ from app.strings import (
     NEW_BOOKING_RESULT_TEXT,
     NONWORKING_INTERVAL_TIME_TEXT,
     OCCUPIED_INTERVAL_TIME_TEXT,
+    PAST_INTERVAL_TIME_TEXT,
     QUOTA_VIOLATING_INTERVAL_TIME_TEXT,
 )
 from app.utils.datetime import (
@@ -174,7 +175,9 @@ async def available_intervals_getter(
         return {"free_intervals": []}
 
     free_intervals = get_free_intervals(
-        TimeInterval(place_object.opening_datetime(day), place_object.closing_datetime(day)),
+        TimeInterval(
+            max(place_object.opening_datetime(day), dt.datetime.now(tz=day.tzinfo)), place_object.closing_datetime(day)
+        ),
         [TimeInterval(x.start, x.end) for x in bookings],
     )
 
@@ -219,6 +222,13 @@ async def on_choose_interval_success(
     end = dt.datetime.combine(
         day.date() + (dt.timedelta(days=1) if end_midnight else dt.timedelta()), end_time, day.tzinfo
     )
+
+    # отступ на случай задержки в получении сообщения
+    cur_time = (dt.datetime.now(tz=day.tzinfo) - dt.timedelta(minutes=1)).replace(second=0, microsecond=0)
+    if start < cur_time:
+        logger.info(f"Past-booking attempted at {place_id}, from {start_time} to {end_time}")
+        await message.answer(ERROR_TEXT.format(error=PAST_INTERVAL_TIME_TEXT))
+        return
 
     booking_time = (end - start).total_seconds()
     if booking_time / 60 < place.minimal_interval_minutes:

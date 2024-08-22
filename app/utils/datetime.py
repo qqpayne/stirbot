@@ -112,20 +112,26 @@ def get_free_intervals(frame: TimeInterval, occupied_intervals: list[TimeInterva
 
     intervals: list[TimeInterval] = []
 
-    interval_start = frame.start
     start_idx = 0
-    if merged_intervals[0].start == frame.start:
-        interval_start = merged_intervals[0].end
-        start_idx = 1
+    for start_idx in range(len(merged_intervals)):
+        if frame.start < merged_intervals[start_idx].end:
+            break
+
+    first_found = merged_intervals[start_idx]
+    interval_start = first_found.end if (first_found.start < frame.start < first_found.end) else frame.start
+    if first_found.start < frame.start and first_found.end < frame.start:
+        start_idx += 1
 
     # свободный интервал - это время между концом одного уже занятого интервала и началом другого
     for idx in range(start_idx, len(merged_intervals)):
         interval_end = merged_intervals[idx].start
+        if interval_end > frame.end:
+            break
         intervals.append(TimeInterval(interval_start, interval_end))
         interval_start = merged_intervals[idx].end
 
     # если последняя запись кончается до конца фрейма, то добавляем интервал с конца этой записи до конца фрейма
-    if interval_start != frame.end:
+    if interval_start < frame.end:
         intervals.append(TimeInterval(interval_start, frame.end))
 
     return intervals
