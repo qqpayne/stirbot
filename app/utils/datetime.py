@@ -114,7 +114,7 @@ def get_free_intervals(frame: TimeInterval, occupied_intervals: list[TimeInterva
 
     interval_start = frame.start
     start_idx = 0
-    if merged_intervals[0].start.time() == frame.start:
+    if merged_intervals[0].start == frame.start:
         interval_start = merged_intervals[0].end
         start_idx = 1
 
