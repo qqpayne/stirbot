@@ -21,6 +21,25 @@ async def main() -> None:
     parser.add_argument("name", type=str, help="Place name")
     parser.add_argument("opening_hour", type=valid_date, help="Place opening hour in H:M format")
     parser.add_argument("closing_hour", type=valid_date, help="Place closing hour in H:M format")
+    parser.add_argument(
+        "--comment",
+        type=str,
+        nargs="?",
+        const="",
+        default="",
+        help="Additional place info that will be displayed to users",
+    )
+    parser.add_argument(
+        "--min_interval",
+        type=int,
+        nargs="?",
+        const="0",
+        default="0",
+        help="Minimal allowed booking interval (in minutes)",
+    )
+    parser.add_argument(
+        "--quota", nargs="?", type=int, const=None, default=None, help="Daily booking quota for each user (in minutes)"
+    )
     parser.add_argument("--update", action="store_true", default=False, help="Update existing place")
     parser.add_argument("--remove", action="store_true", default=False, help="Remove existing place")
     args = parser.parse_args()
@@ -41,12 +60,26 @@ async def main() -> None:
             print(f"{place.id} has been deleted")  # noqa: T201
         elif args.update:
             place = await db.place.update(
-                args.name, {"opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
+                args.name,
+                {
+                    "opening_hour": args.opening_hour,
+                    "closing_hour": args.closing_hour,
+                    "comment": args.comment,
+                    "daily_quota_minutes": args.quota,
+                    "minimal_interval_minutes": args.min_interval,
+                },
             )
             print(f"{place} has been updated")  # noqa: T201
         else:
             place = await db.place.create(
-                {"id": args.name, "opening_hour": args.opening_hour, "closing_hour": args.closing_hour}
+                {
+                    "id": args.name,
+                    "opening_hour": args.opening_hour,
+                    "closing_hour": args.closing_hour,
+                    "comment": args.comment,
+                    "daily_quota_minutes": args.quota,
+                    "minimal_interval_minutes": args.min_interval,
+                }
             )
             print(f"{place} has been created")  # noqa: T201
 

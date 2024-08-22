@@ -24,6 +24,10 @@ class TimeInterval:
     start: dt.datetime
     end: dt.datetime
 
+    @property
+    def duration(self) -> float:
+        return (self.end - self.start).total_seconds()
+
 
 # Можно использовать локали и %a в strftime, НО локали усложняют деплой и отличаются от дистрибутива к дистрибутиву
 def translate_weekday(weekday: Literal["0", "1", "2", "3", "4", "5", "6"]) -> str:  # noqa: PLR0911

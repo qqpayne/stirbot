@@ -1,6 +1,7 @@
 import datetime
 from typing import TYPE_CHECKING
 
+from sqlalchemy import text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -15,6 +16,9 @@ class Place(Base):
     # Лучше использовать знания о таймзоне в самом боте
     opening_hour: Mapped[datetime.time]
     closing_hour: Mapped[datetime.time]
+    comment: Mapped[str] = mapped_column(server_default="")
+    daily_quota_minutes: Mapped[int | None] = mapped_column(nullable=True, default=None)
+    minimal_interval_minutes: Mapped[int] = mapped_column(server_default=text("0"))
     bookings: Mapped[list["Booking"]] = relationship(back_populates="place")
 
     def opening_datetime(self, day: datetime.datetime) -> datetime.datetime:

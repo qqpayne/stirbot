@@ -1,4 +1,5 @@
 import datetime as dt
+import math
 from typing import Any
 
 from aiogram import F
@@ -16,15 +17,19 @@ from app.strings import (
     BACK_TEXT,
     ERROR_TEXT,
     INEXISTING_PLACE_TEXT,
+    LESS_THAN_MINIMAL_INTERVAL_TIME_TEXT,
     NEW_BOOKING_AVAILABLE_INTERVALS_TEXT,
     NEW_BOOKING_CHOOSE_DAY_TEXT,
     NEW_BOOKING_CHOOSE_PLACE_TEXT,
     NEW_BOOKING_INTERVAL_HELP_TEXT,
+    NEW_BOOKING_MINIMAL_INTERVAL_TEXT,
     NEW_BOOKING_NO_INTERVALS_LEFT_TEXT,
     NEW_BOOKING_NO_PLACES_AVAILABLE_TEXT,
+    NEW_BOOKING_QUOTA_TEXT,
     NEW_BOOKING_RESULT_TEXT,
     NONWORKING_INTERVAL_TIME_TEXT,
     OCCUPIED_INTERVAL_TIME_TEXT,
+    QUOTA_VIOLATING_INTERVAL_TIME_TEXT,
 )
 from app.utils.datetime import (
     TimeInterval,
@@ -123,6 +128,35 @@ async def date_place_getter(dialog_manager: DialogManager, **_: dict[str, Any]) 
     }
 
 
+async def place_info_getter(
+    dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
+) -> dict[str, str | int | float | None]:
+    date: dt.datetime = deserialize_date(dialog_manager.dialog_data["day"])  # type: ignore  # noqa: PGH003
+    place: str = dialog_manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
+    user: User = dialog_manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    assert isinstance(user, User)  # noqa: S101
+    assert isinstance(place, str)  # noqa: S101
+    assert isinstance(date, dt.datetime)  # noqa: S101
+
+    place_object = await db.place.get(place)
+    if place_object is None:
+        logger.warning(f"Unexisting place {place}")
+        return {}
+
+    place_info: dict[str, str | int | float | None] = {
+        "place_comment": place_object.comment,
+        "minimal_interval": place_object.minimal_interval_minutes,
+        "place_quota": place_object.daily_quota_minutes,
+    }
+
+    if place_object.daily_quota_minutes is not None:
+        existing_bookings = await db.booking.get_by_location(place, date)
+        user_time = sum([x.duration for x in filter(lambda b: b.user_id == user.id, existing_bookings)])
+        place_info["left_quota"] = math.floor(place_object.daily_quota_minutes - user_time / 60)
+
+    return place_info
+
+
 async def available_intervals_getter(
     dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
 ) -> dict[str, list[TimeInterval]]:
@@ -143,6 +177,8 @@ async def available_intervals_getter(
         TimeInterval(place_object.opening_datetime(day), place_object.closing_datetime(day)),
         [TimeInterval(x.start, x.end) for x in bookings],
     )
+
+    free_intervals = list(filter(lambda x: x.duration >= place_object.minimal_interval_minutes * 60, free_intervals))
 
     return {
         "free_intervals": [
@@ -184,12 +220,24 @@ async def on_choose_interval_success(
         day.date() + (dt.timedelta(days=1) if end_midnight else dt.timedelta()), end_time, day.tzinfo
     )
 
+    booking_time = (end - start).total_seconds()
+    if booking_time / 60 < place.minimal_interval_minutes:
+        logger.debug(f"Less than minimal interval for {place_id}, from {start_time} to {end_time}")
+        await message.answer(ERROR_TEXT.format(error=LESS_THAN_MINIMAL_INTERVAL_TIME_TEXT))
+        return
+
     if start < place.opening_datetime(day) or end > place.closing_datetime(day):
         logger.debug(f"Error in range check for {place_id}, from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=NONWORKING_INTERVAL_TIME_TEXT))
         return
 
     existing_bookings = await db.booking.get_by_location(place_id, day)
+
+    user_time = sum([x.duration for x in filter(lambda b: b.user_id == user.id, existing_bookings)])
+    if place.daily_quota_minutes is not None and ((booking_time + user_time) / 60) > place.daily_quota_minutes:
+        logger.info(f"Quota violation attempt by {user.id} by booking from {start_time} to {end_time}")
+        await message.answer(ERROR_TEXT.format(error=QUOTA_VIOLATING_INTERVAL_TIME_TEXT))
+        return
 
     if check_interval_intersections(start, end, [TimeInterval(x.start, x.end) for x in existing_bookings]) is True:
         logger.info(f"Error in check intersection (user: {user}) - from {start} to {end}")
@@ -215,6 +263,22 @@ async def on_choose_interval_error(message: Message, widget: Any, manager: Dialo
     await message.answer(ERROR_TEXT.format(error=error))
 
 
+def choosable_interval_predicate(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -> bool:  # noqa: ARG001, ANN401
+    if len(data.get("free_intervals", [])) == 0:
+        return False
+
+    if data.get("place_quota") is not None:
+        left_quota = data.get("left_quota", 0)
+        if left_quota <= 0:
+            return False
+
+        minimal_interval = data.get("minimal_interval", 0)
+        if minimal_interval > left_quota:
+            return False
+
+    return True
+
+
 choose_interval_window = Window(
     Format(NEW_BOOKING_AVAILABLE_INTERVALS_TEXT, when=F["free_intervals"].len() > 0),
     Format(NEW_BOOKING_NO_INTERVALS_LEFT_TEXT, when=F["free_intervals"].len() == 0),
@@ -222,7 +286,10 @@ choose_interval_window = Window(
         Format("— {item.start.hour:02d}:{item.start.minute:02d} - {item.end.hour:02d}:{item.end.minute:02d}"),
         items="free_intervals",
     ),
-    Const(NEW_BOOKING_INTERVAL_HELP_TEXT, when=F["free_intervals"].len() > 0),
+    Format(NEW_BOOKING_MINIMAL_INTERVAL_TEXT, when=F["free_intervals"].len() > 0 and F["minimal_interval"] > 0),
+    Format(NEW_BOOKING_QUOTA_TEXT, when=F["free_intervals"].len() > 0 and F["place_quota"]),
+    Format("{place_comment}", when=F["free_intervals"].len() > 0 and F["place_comment"].len() > 0),
+    Const("\n" + NEW_BOOKING_INTERVAL_HELP_TEXT, when=choosable_interval_predicate),
     TextInput(
         id="interval",
         type_factory=parse_time_interval,
@@ -231,7 +298,7 @@ choose_interval_window = Window(
     ),
     Back(Const(BACK_TEXT)),
     state=NewBookingFSM.choosing_interval,
-    getter=[date_place_getter, available_intervals_getter],
+    getter=[date_place_getter, place_info_getter, available_intervals_getter],
 )
 
 ####

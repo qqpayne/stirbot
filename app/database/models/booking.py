@@ -30,6 +30,10 @@ class Booking(Base):
     def local_end(self) -> datetime_tz:
         return self.end.astimezone(settings.tz)
 
+    @property
+    def duration(self) -> float:
+        return (self.end - self.start).total_seconds()
+
     def __repr__(self) -> str:
         return (
             f"{self.place_id} "
