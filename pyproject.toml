@@ -20,6 +20,7 @@ uvloop = "^0.19.0"
 tenacity = "^8.5.0"
 redis = "^5.0.7"
 aiogram-dialog = "^2.1.0"
+apscheduler = "^3.10.4"
 
 [tool.poetry.dev-dependencies]
 ruff = "^0.5.1"
@@ -64,6 +65,10 @@ follow_imports_for_stubs = true
 
 [[tool.mypy.overrides]]
 module = "asyncpg.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "apscheduler.*"
 ignore_missing_imports = true
 
 [build-system]

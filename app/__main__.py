@@ -4,7 +4,7 @@ from loguru import logger
 
 from app import handlers, middleware
 from app.loader import bot, dp
-from app.utils import commands, errors, logging
+from app.utils import commands, errors, logging, scheduler
 
 
 async def on_startup() -> None:
@@ -27,6 +27,7 @@ async def on_shutdown() -> None:
 
 async def main() -> None:
     logging.setup()
+    scheduler.setup(dp)
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
     await bot.delete_webhook(drop_pending_updates=True)
