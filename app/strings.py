@@ -101,11 +101,25 @@ DELETE_NONEXISTING_BOOKING_TEXT = "такой записи не существу
 DELETE_ANOTHERS_BOOKING_TEXT = "эта запись принадлежит другому пользователю"
 DELETE_PAST_BOOKING_TEXT = "нельзя удалить идущую или уже прошедшую запись"
 
+NOTIFICATIONS_CURRENT_CONFIG_TEXT = "Ваши текущие настройки уведомлений:"
+NOTIFICATIONS_CURRENT_BEFORE_START_SET_TEXT = "— присылать уведомление за {before_start_mins} минут до начала записи"
+NOTIFICATIONS_CURRENT_BEFORE_START_NONE_TEXT = "— не присылать уведомление до начала записи"
+NOTIFICATIONS_CURRENT_BEFORE_END_SET_TEXT = "— присылать уведомление за {before_end_mins} минут перед концом записи"
+NOTIFICATIONS_CURRENT_BEFORE_END_NONE_TEXT = "— не присылать уведомление перед концом записи"
+NOTIFICATIONS_CONFIGURE_TEXT = "Измените настройку времени {configure_action_text}, отправив сообщение с числом минут или выберите из готовых вариантов:"  # noqa: E501
+NOTIFICATIONS_CONFIGURE_BEFORE_START_TEXT = "уведомлений перед началом записи"
+NOTIFICATIONS_CONFIGURE_BEFORE_END_TEXT = "уведомлений перед концом записи"
+NOTIFICATIONS_CONFIGURE_BEFORE_START_SWITCH_TEXT = "Настроить до начала"
+NOTIFICATIONS_CONFIGURE_BEFORE_END_SWITCH_TEXT = "Настроить перед концом"
+NOTIFICATIONS_TURNOFF_OPTION_TEXT = "отключить"
+
+
 EXIT_TEXT = "Выйти"
 BACK_TEXT = "↩️ Назад"
 ERROR_TEXT = "Ошибка: {error}"
 DIALOG_MANAGER_ERROR_TEXT = "проблемы на серверной стороне, введите команду еще раз"
 
+MINUTES_TEXT = "минут"
 TODAY_TEXT = "Сегодня"
 MON_TEXT = "Пн"
 TUE_TEXT = "Вт"

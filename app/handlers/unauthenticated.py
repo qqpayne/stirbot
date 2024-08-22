@@ -38,7 +38,14 @@ async def signup_handler(message: types.Message, db: Database) -> None:
 
     # Авторизованные пользователи не должны попадать в этот хэндлер, можно не проверять отсутствие пользователя в базе
     new_user = await db.user.create(
-        {"id": usr.id, "first_name": usr.first_name, "last_name": usr.last_name, "username": usr.username}
+        {
+            "id": usr.id,
+            "first_name": usr.first_name,
+            "last_name": usr.last_name,
+            "username": usr.username,
+            "notify_before_end_mins": None,
+            "notify_before_start_mins": None,
+        }
     )
     logger.info("New user registered: {user}", user=new_user)
 

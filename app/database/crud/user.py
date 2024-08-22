@@ -11,12 +11,16 @@ class UserCreateData(TypedDict):
     first_name: str
     last_name: str | None
     username: str | None
+    notify_before_start_mins: int | None
+    notify_before_end_mins: int | None
 
 
 class UserUpdateData(TypedDict, total=False):
     first_name: str
     last_name: str | None
     username: str | None
+    notify_before_start_mins: int | None
+    notify_before_end_mins: int | None
 
 
 class CRUDUser(CRUDBase[User, UserCreateData, UserUpdateData]):

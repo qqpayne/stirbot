@@ -18,6 +18,9 @@ class User(Base):
     is_admin: Mapped[bool] = mapped_column(default=False)
     is_approved: Mapped[bool] = mapped_column(default=False)
 
+    notify_before_start_mins: Mapped[int | None] = mapped_column(nullable=True, default=None)
+    notify_before_end_mins: Mapped[int | None] = mapped_column(nullable=True, default=None)
+
     bookings: Mapped[list["Booking"]] = relationship(back_populates="user")
 
     @property
