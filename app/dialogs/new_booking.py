@@ -226,18 +226,18 @@ async def on_choose_interval_success(
     # отступ на случай задержки в получении сообщения
     cur_time = (dt.datetime.now(tz=day.tzinfo) - dt.timedelta(minutes=1)).replace(second=0, microsecond=0)
     if start < cur_time:
-        logger.info(f"Past-booking attempted at {place_id}, from {start_time} to {end_time}")
+        logger.info(f"Past-booking attempted at {place_id} by {user}, from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=PAST_INTERVAL_TIME_TEXT))
         return
 
     booking_time = (end - start).total_seconds()
     if booking_time / 60 < place.minimal_interval_minutes:
-        logger.debug(f"Less than minimal interval for {place_id}, from {start_time} to {end_time}")
+        logger.info(f"Less than minimal interval attempt at {place_id} by {user}, from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=LESS_THAN_MINIMAL_INTERVAL_TIME_TEXT))
         return
 
     if start < place.opening_datetime(day) or end > place.closing_datetime(day):
-        logger.debug(f"Error in range check for {place_id}, from {start_time} to {end_time}")
+        logger.info(f"Nonworking interval attempt at {place_id} by {user}, from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=NONWORKING_INTERVAL_TIME_TEXT))
         return
 
@@ -245,12 +245,12 @@ async def on_choose_interval_success(
 
     user_time = sum([x.duration for x in filter(lambda b: b.user_id == user.id, existing_bookings)])
     if place.daily_quota_minutes is not None and ((booking_time + user_time) / 60) > place.daily_quota_minutes:
-        logger.info(f"Quota violation attempt by {user.id} by booking from {start_time} to {end_time}")
+        logger.info(f"Quota violation attempt at {place_id} by {user} by booking from {start_time} to {end_time}")
         await message.answer(ERROR_TEXT.format(error=QUOTA_VIOLATING_INTERVAL_TIME_TEXT))
         return
 
     if check_interval_intersections(start, end, [TimeInterval(x.start, x.end) for x in existing_bookings]) is True:
-        logger.info(f"Error in check intersection (user: {user}) - from {start} to {end}")
+        logger.info(f"Interval intersection attempt at {place_id} by {user}, from {start} to {end}")
         await message.answer(ERROR_TEXT.format(error=OCCUPIED_INTERVAL_TIME_TEXT))
         return
 
