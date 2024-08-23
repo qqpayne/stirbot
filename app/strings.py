@@ -113,6 +113,8 @@ NOTIFICATIONS_CONFIGURE_BEFORE_START_SWITCH_TEXT = "Настроить до на
 NOTIFICATIONS_CONFIGURE_BEFORE_END_SWITCH_TEXT = "Настроить перед концом"
 NOTIFICATIONS_TURNOFF_OPTION_TEXT = "отключить"
 
+NOTIFICATION_BEFORE_START_TEXT = "Напоминание: вы записаны в {place} на {time}"
+NOTIFICATION_BEFORE_END_TEXT = "Напоминание: ваша запись в {place} заканчивается в {time}"
 
 EXIT_TEXT = "Выйти"
 BACK_TEXT = "↩️ Назад"

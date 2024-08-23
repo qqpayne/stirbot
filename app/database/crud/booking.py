@@ -26,3 +26,13 @@ class CRUDBooking(CRUDBase[Booking, BookingCreateData, BookingUpdateData]):
         )
         result = await self.sess.execute(query)
         return list(result.scalars())
+
+    async def get_users_upcoming(self, user_id: int, at_time: dt.datetime) -> list[Booking]:
+        query = select(self.model).where((self.model.user_id == user_id) & (self.model.start >= at_time))
+        result = await self.sess.execute(query)
+        return list(result.scalars())
+
+    async def get_users_notfinished(self, user_id: int, by_time: dt.datetime) -> list[Booking]:
+        query = select(self.model).where((self.model.user_id == user_id) & (self.model.end >= by_time))
+        result = await self.sess.execute(query)
+        return list(result.scalars())

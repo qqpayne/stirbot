@@ -42,6 +42,8 @@ from app.utils.datetime import (
     serialize_date,
 )
 from app.utils.layout_widget import Layout
+from app.utils.notifications import create_pair as create_notifs
+from app.utils.scheduler import scheduler
 
 
 class NewBookingFSM(StatesGroup):
@@ -256,6 +258,7 @@ async def on_choose_interval_success(
 
     booking = await db.booking.create({"start": start, "end": end, "user_id": user.id, "place_id": place_id})
     logger.info(f"New booking created: {booking}")
+    await create_notifs(scheduler, booking)
 
     await message.answer(
         NEW_BOOKING_RESULT_TEXT.format(

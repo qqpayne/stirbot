@@ -24,6 +24,8 @@ from app.strings import (
     EDIT_BOOKING_LIST_TEXT,
     ERROR_TEXT,
 )
+from app.utils.notifications import delete_pair as delete_notifs
+from app.utils.scheduler import scheduler
 
 
 class EditBookingFSM(StatesGroup):
@@ -73,6 +75,7 @@ async def on_delete_booking_selected(
     if error_flag is False:
         await db.booking.remove(int(item_id))
         logger.info(f"Deleted booking {booking}")
+        await delete_notifs(scheduler, booking)  # type: ignore  # noqa: PGH003
     await manager.switch_to(EditBookingFSM.viewing_booking)
 
 

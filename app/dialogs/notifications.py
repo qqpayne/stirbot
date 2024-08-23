@@ -1,3 +1,5 @@
+import datetime as dt
+from enum import Enum
 from typing import Any
 
 from aiogram import F, Router
@@ -5,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.input import TextInput
-from aiogram_dialog.widgets.kbd import Back, Cancel, Row, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Back, Cancel, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format, Multi
 from loguru import logger
 
@@ -27,6 +29,13 @@ from app.strings import (
     NOTIFICATIONS_CURRENT_CONFIG_TEXT,
     NOTIFICATIONS_TURNOFF_OPTION_TEXT,
 )
+from app.utils import notifications as notifs
+from app.utils.scheduler import scheduler
+
+
+class ConfigureAction(Enum):
+    BEFORE_START = "before_start"
+    BEFORE_END = "before_end"
 
 
 class NotificationFSM(StatesGroup):
@@ -60,13 +69,26 @@ async def update_user_notifs(manager: DialogManager, minutes_before: int | None)
     assert isinstance(db, Database)  # noqa: S101
     assert isinstance(user, User)  # noqa: S101
 
-    action = manager.dialog_data["configure_action"]  # type: ignore  # noqa: PGH003
-    if action == "before_start":
-        await db.user.update(user.id, {"notify_before_start_mins": minutes_before})
-        logger.info(f"Changed before start notification delay to {minutes_before} for {user}")
-    elif action == "before_end":
-        await db.user.update(user.id, {"notify_before_end_mins": minutes_before})
-        logger.info(f"Changed before end notification delay to {minutes_before} for {user}")
+    action = ConfigureAction(manager.dialog_data["configure_action"])  # type: ignore  # noqa: PGH003
+    match action:
+        case ConfigureAction.BEFORE_START:
+            previous_min_before = user.notify_before_start_mins
+            schedule_on = notifs.ScheduleOn.BEFORE_START
+            await db.user.update(user.id, {"notify_before_start_mins": minutes_before})
+            logger.info(f"Changed before start notification delay to {minutes_before} for {user}")
+            bookings_to_reschedule = await db.booking.get_users_upcoming(user.id, dt.datetime.now(dt.timezone.utc))
+        case ConfigureAction.BEFORE_END:
+            previous_min_before = user.notify_before_end_mins
+            schedule_on = notifs.ScheduleOn.BEFORE_END
+            await db.user.update(user.id, {"notify_before_end_mins": minutes_before})
+            logger.info(f"Changed before end notification delay to {minutes_before} for {user}")
+            bookings_to_reschedule = await db.booking.get_users_notfinished(user.id, dt.datetime.now(dt.timezone.utc))
+
+    if previous_min_before != minutes_before:
+        if previous_min_before is not None:
+            [notifs.delete(scheduler, booking, schedule_on, previous_min_before) for booking in bookings_to_reschedule]  # type: ignore[func-returns-value]
+        if minutes_before is not None:
+            [notifs.create(scheduler, booking, schedule_on, minutes_before) for booking in bookings_to_reschedule]  # type: ignore[func-returns-value]
 
     await manager.switch_to(NotificationFSM.main)
 
@@ -80,12 +102,13 @@ async def on_text_option_success(_: Message, __: Any, manager: DialogManager, pa
 
 
 async def configure_action_text_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, str]:
-    action = dialog_manager.dialog_data["configure_action"]  # type: ignore  # noqa: PGH003
-    if action == "before_start":
-        return {"configure_action_text": NOTIFICATIONS_CONFIGURE_BEFORE_START_TEXT}
-    elif action == "before_end":  # noqa: RET505
-        return {"configure_action_text": NOTIFICATIONS_CONFIGURE_BEFORE_END_TEXT}
-    return {}
+    action = ConfigureAction(dialog_manager.dialog_data["configure_action"])  # type: ignore  # noqa: PGH003
+
+    match action:
+        case ConfigureAction.BEFORE_START:
+            return {"configure_action_text": NOTIFICATIONS_CONFIGURE_BEFORE_START_TEXT}
+        case ConfigureAction.BEFORE_END:
+            return {"configure_action_text": NOTIFICATIONS_CONFIGURE_BEFORE_END_TEXT}
 
 
 notifications_dialog = Dialog(
@@ -97,20 +120,17 @@ notifications_dialog = Dialog(
             Format(NOTIFICATIONS_CURRENT_BEFORE_END_SET_TEXT, when=F["before_end_mins"]),
             Const(NOTIFICATIONS_CURRENT_BEFORE_END_NONE_TEXT, when=F["before_end_mins"].is_(None)),
         ),
-        Row(
-            SwitchTo(
-                Const(NOTIFICATIONS_CONFIGURE_BEFORE_START_SWITCH_TEXT),
-                id="before_start",
-                state=NotificationFSM.configure,
-                on_click=on_configure_clicked,
-            ),
-            SwitchTo(
-                Const(NOTIFICATIONS_CONFIGURE_BEFORE_END_SWITCH_TEXT),
-                id="before_end",
-                state=NotificationFSM.configure,
-                on_click=on_configure_clicked,
-            ),
-            id="action_row",
+        SwitchTo(
+            Const(NOTIFICATIONS_CONFIGURE_BEFORE_START_SWITCH_TEXT),
+            id=ConfigureAction.BEFORE_START.value,
+            state=NotificationFSM.configure,
+            on_click=on_configure_clicked,
+        ),
+        SwitchTo(
+            Const(NOTIFICATIONS_CONFIGURE_BEFORE_END_SWITCH_TEXT),
+            id=ConfigureAction.BEFORE_END.value,
+            state=NotificationFSM.configure,
+            on_click=on_configure_clicked,
         ),
         Cancel(Const(EXIT_TEXT), on_click=on_exit),
         state=NotificationFSM.main,
