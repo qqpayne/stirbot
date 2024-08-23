@@ -34,7 +34,7 @@ class EditBookingFSM(StatesGroup):
 
 
 async def user_bookings_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, list[Booking] | bool]:
-    user: User = dialog_manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    user = dialog_manager.middleware_data["user_data"]
     assert isinstance(user, User)  # noqa: S101
 
     bookings: list[Booking] = await user.awaitable_attrs.bookings
@@ -52,30 +52,29 @@ async def on_delete_booking_selected(
     manager: DialogManager,
     item_id: str,
 ) -> None:
-    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
-    user: User = manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    db = manager.middleware_data["db"]
+    user = manager.middleware_data["user_data"]
     assert isinstance(db, Database)  # noqa: S101
     assert isinstance(user, User)  # noqa: S101
 
-    error_flag = False
     booking = await db.booking.get(int(item_id))
     if booking is None:
         logger.warning(f"Unexisting booking with id {item_id}")
         await callback.answer(ERROR_TEXT.format(error=DELETE_NONEXISTING_BOOKING_TEXT))
-        error_flag = True
+
     elif booking.user_id != user.id:
         logger.warning(f"User {user.id} tried to delete another's {booking}")
         await callback.answer(ERROR_TEXT.format(error=DELETE_ANOTHERS_BOOKING_TEXT))
-        error_flag = True
+
     elif booking.local_start <= dt.datetime.now(tz=settings.tz):
         logger.info(f"User {user.id} tried to delete past or ongoing booking {booking}")
         await callback.answer(ERROR_TEXT.format(error=DELETE_PAST_BOOKING_TEXT))
-        error_flag = True
 
-    if error_flag is False:
-        await db.booking.remove(int(item_id))
+    else:
+        await db.booking.remove(booking.id)
         logger.info(f"Deleted booking {booking}")
-        await delete_notifs(scheduler, booking)  # type: ignore  # noqa: PGH003
+        await delete_notifs(scheduler, booking)
+
     await manager.switch_to(EditBookingFSM.viewing_booking)
 
 

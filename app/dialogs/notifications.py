@@ -60,16 +60,16 @@ async def on_configure_clicked(
     switchto: Any,  # noqa: ANN401
     manager: DialogManager,
 ) -> None:
-    manager.dialog_data["configure_action"] = switchto.widget_id  # type: ignore  # noqa: PGH003
+    manager.dialog_data["configure_action"] = switchto.widget_id
 
 
 async def update_user_notifs(manager: DialogManager, minutes_before: int | None) -> None:
-    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
-    user: User = manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    db: Database = manager.middleware_data["db"]
+    user: User = manager.middleware_data["user_data"]
     assert isinstance(db, Database)  # noqa: S101
     assert isinstance(user, User)  # noqa: S101
 
-    action = ConfigureAction(manager.dialog_data["configure_action"])  # type: ignore  # noqa: PGH003
+    action = ConfigureAction(manager.dialog_data["configure_action"])
     match action:
         case ConfigureAction.BEFORE_START:
             previous_min_before = user.notify_before_start_mins
@@ -102,7 +102,7 @@ async def on_text_option_success(_: Message, __: Any, manager: DialogManager, pa
 
 
 async def configure_action_text_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, str]:
-    action = ConfigureAction(dialog_manager.dialog_data["configure_action"])  # type: ignore  # noqa: PGH003
+    action = ConfigureAction(dialog_manager.dialog_data["configure_action"])
 
     match action:
         case ConfigureAction.BEFORE_START:

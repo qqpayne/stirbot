@@ -53,4 +53,4 @@ class Settings(BotSettings, DBSettings, RedisSettings):
     DEBUG: bool = False
 
 
-settings = Settings()  # type: ignore  # noqa: PGH003
+settings = Settings()  # type: ignore[reportCallIssue]

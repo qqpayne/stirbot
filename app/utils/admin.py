@@ -17,7 +17,10 @@ async def get_admin_link(db: Database) -> str:
     if len(admins_with_username) > 1:
         logger.debug(f"More than one admin is assigned, using {admin} as a primary admin")
 
-    return "@" + admin.username  # type: ignore  # noqa: PGH003
+    if admin.username is None:
+        raise ValueError("unreachable")  # noqa: EM101
+
+    return "@" + admin.username
 
 
 # Так как ссылки по айди не работают, то нужно отображать username админов.

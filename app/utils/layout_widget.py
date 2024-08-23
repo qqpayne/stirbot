@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Sequence
 from itertools import chain
-from typing import Any
+from typing import Any, Optional
 
 from aiogram.types import CallbackQuery
 from aiogram_dialog.api.internal import ButtonVariant, RawKeyboard
@@ -22,14 +22,14 @@ class Layout(Keyboard):
         self.buttons = buttons
         self.layout = layout
 
-    def find(self, widget_id: str):  # type: ignore  # noqa: ANN201, PGH003
+    def find(self, widget_id: str) -> Optional["Layout"]:
         widget = super().find(widget_id)
         if widget:
-            return widget
+            return widget  # type: ignore[no-any-return]
         for btn in self.buttons:
             widget = btn.find(widget_id)
             if widget:
-                return widget
+                return widget  # type: ignore[no-any-return]
         return None
 
     async def _render_keyboard(
@@ -39,7 +39,7 @@ class Layout(Keyboard):
     ) -> RawKeyboard:
         kbd: RawKeyboard = []
         for b in self.buttons:
-            b_kbd = await b.render_keyboard(data, manager)  # type: ignore  # noqa: PGH003
+            b_kbd = await b.render_keyboard(data, manager)
             if self.layout is None:
                 kbd += b_kbd
             else:

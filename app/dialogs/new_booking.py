@@ -53,7 +53,7 @@ class NewBookingFSM(StatesGroup):
 
 
 async def on_place_selected(callback: CallbackQuery, select: Any, manager: DialogManager, item_id: str) -> None:  # noqa: ARG001, ANN401
-    manager.dialog_data["place"] = item_id  # type: ignore  # noqa: PGH003
+    manager.dialog_data["place"] = item_id
     await manager.switch_to(NewBookingFSM.choosing_day)
 
 
@@ -86,7 +86,7 @@ choose_place_window = Window(
 
 
 async def on_day_selected(callback: CallbackQuery, select: Any, manager: DialogManager, item_id: str) -> None:  # noqa: ARG001, ANN401
-    manager.dialog_data["day"] = item_id  # type: ignore  # noqa: PGH003
+    manager.dialog_data["day"] = item_id
     await manager.switch_to(NewBookingFSM.choosing_interval)
 
 
@@ -95,11 +95,11 @@ async def week_items_getter(**_: dict[str, Any]) -> dict[str, list[tuple[str, dt
 
 
 def back_predicate(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -> bool:  # noqa: ARG001, ANN401
-    return not dialog_manager.dialog_data.get("place_selection_skipped", False)  # type: ignore  # noqa: PGH003
+    return not dialog_manager.dialog_data.get("place_selection_skipped", False)
 
 
 def cancel_predicate(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -> bool:  # noqa: ARG001, ANN401
-    return dialog_manager.dialog_data.get("place_selection_skipped", False)  # type: ignore  # noqa: PGH003
+    return dialog_manager.dialog_data.get("place_selection_skipped", False)  # type: ignore[no-any-return]
 
 
 choose_day_window = Window(
@@ -126,20 +126,19 @@ choose_day_window = Window(
 
 async def date_place_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, str]:
     return {
-        "date": deserialize_date(dialog_manager.dialog_data["day"]).strftime("%d.%m"),  # type: ignore  # noqa: PGH003
-        "place": dialog_manager.dialog_data["place"],  # type: ignore  # noqa: PGH003
+        "date": deserialize_date(dialog_manager.dialog_data["day"]).strftime("%d.%m"),  # type: ignore[reportUnknownArgumentType]
+        "place": dialog_manager.dialog_data["place"],
     }
 
 
 async def place_info_getter(
     dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
 ) -> dict[str, str | int | float | None]:
-    date: dt.datetime = deserialize_date(dialog_manager.dialog_data["day"])  # type: ignore  # noqa: PGH003
-    place: str = dialog_manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
-    user: User = dialog_manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
+    date: dt.datetime = deserialize_date(dialog_manager.dialog_data["day"])  # type: ignore[reportUnknownArgumentType]
+    place: str = dialog_manager.dialog_data["place"]
+    user: User = dialog_manager.middleware_data["user_data"]
     assert isinstance(user, User)  # noqa: S101
     assert isinstance(place, str)  # noqa: S101
-    assert isinstance(date, dt.datetime)  # noqa: S101
 
     place_object = await db.place.get(place)
     if place_object is None:
@@ -163,8 +162,8 @@ async def place_info_getter(
 async def available_intervals_getter(
     dialog_manager: DialogManager, db: Database, **_: dict[str, Any]
 ) -> dict[str, list[TimeInterval]]:
-    serialized_day: str = dialog_manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
-    place: str = dialog_manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
+    serialized_day: str = dialog_manager.dialog_data["day"]
+    place: str = dialog_manager.dialog_data["place"]
     assert isinstance(serialized_day, str)  # noqa: S101
     assert isinstance(place, str)  # noqa: S101
 
@@ -199,10 +198,10 @@ async def on_choose_interval_success(
     parsed_data: TimeInterval,
 ) -> None:
     # затыкаем тайпчекер (в aiogram_dialog есть Unknown типы из-за которых линтер превращает код в гирлянду)
-    serialized_day: str = manager.dialog_data["day"]  # type: ignore  # noqa: PGH003
-    place_id: str = manager.dialog_data["place"]  # type: ignore  # noqa: PGH003
-    user: User = manager.middleware_data["user_data"]  # type: ignore  # noqa: PGH003
-    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
+    serialized_day: str = manager.dialog_data["day"]
+    place_id: str = manager.dialog_data["place"]
+    user: User = manager.middleware_data["user_data"]
+    db: Database = manager.middleware_data["db"]
     assert isinstance(serialized_day, str)  # noqa: S101
     assert isinstance(place_id, str)  # noqa: S101
     assert isinstance(user, User)  # noqa: S101
@@ -272,7 +271,7 @@ async def on_choose_interval_success(
 
 
 async def on_choose_interval_error(message: Message, widget: Any, manager: DialogManager, error: ValueError) -> None:  # noqa: ARG001, ANN401
-    logger.info(f"Error in day confirmation (user: {manager.middleware_data['user_data']}) {error}")  # type: ignore  # noqa: PGH003
+    logger.info(f"Error in day confirmation (user: {manager.middleware_data['user_data']}) {error}")
     await message.answer(ERROR_TEXT.format(error=error))
 
 
@@ -318,13 +317,13 @@ choose_interval_window = Window(
 
 
 async def try_skip_place_selection(_: Any, manager: DialogManager) -> None:  # noqa: ANN401
-    db: Database = manager.middleware_data["db"]  # type: ignore  # noqa: PGH003
+    db: Database = manager.middleware_data["db"]
     assert isinstance(db, Database)  # noqa: S101
 
     places = await db.place.get_all()
     if len(places) == 1:
-        manager.dialog_data["place"] = places[0].id  # type: ignore  # noqa: PGH003
-        manager.dialog_data["place_selection_skipped"] = True  # type: ignore  # noqa: PGH003
+        manager.dialog_data["place"] = places[0].id
+        manager.dialog_data["place_selection_skipped"] = True
         await manager.switch_to(NewBookingFSM.choosing_day)
 
 

@@ -52,7 +52,7 @@ async def booking_handler(_: types.Message, dialog_manager: DialogManager) -> No
     """
     Начинает booking-диалог, отправляя пользователю меню с выбором действия: создание новой записи или просмотр грядущих
     """
-    await dialog_manager.start(BookingFSM.main, mode=StartMode.RESET_STACK)  # type: ignore  # noqa: PGH003
+    await dialog_manager.start(BookingFSM.main, mode=StartMode.RESET_STACK)
 
 
 @router.message(Command("notifications"))
@@ -61,4 +61,4 @@ async def notifications_handler(_: types.Message, dialog_manager: DialogManager)
     Начинает notifications-диалог, отправляя пользователю информацию о текущих настройках уведомлений и меню с
     возможностью их изменить.
     """
-    await dialog_manager.start(NotificationFSM.main, mode=StartMode.RESET_STACK)  # type: ignore  # noqa: PGH003
+    await dialog_manager.start(NotificationFSM.main, mode=StartMode.RESET_STACK)

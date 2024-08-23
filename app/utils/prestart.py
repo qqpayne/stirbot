@@ -17,8 +17,8 @@ MAX_TIMEOUT = 30
 @tenacity.retry(
     wait=tenacity.wait_fixed(TIMEOUT_BETWEEN_ATTEMPTS),
     stop=tenacity.stop_after_delay(MAX_TIMEOUT),
-    before=before_log(logger, "INFO"),  # type: ignore  # noqa: PGH003
-    after=after_log(logger, "WARNING"),  # type: ignore  # noqa: PGH003
+    before=before_log(logger, "INFO"),  # type: ignore[arg-type]
+    after=after_log(logger, "WARNING"),  # type: ignore[arg-type]
 )
 async def wait_postgres() -> None:
     try:
@@ -35,8 +35,8 @@ async def wait_postgres() -> None:
 @tenacity.retry(
     wait=tenacity.wait_fixed(TIMEOUT_BETWEEN_ATTEMPTS),
     stop=tenacity.stop_after_delay(MAX_TIMEOUT),
-    before=before_log(logger, "INFO"),  # type: ignore  # noqa: PGH003
-    after=after_log(logger, "WARNING"),  # type: ignore  # noqa: PGH003
+    before=before_log(logger, "INFO"),  # type: ignore[arg-type]
+    after=after_log(logger, "WARNING"),  # type: ignore[arg-type]
 )
 async def wait_redis() -> None:
     client = Redis.from_url(settings.redis_url)
@@ -47,7 +47,7 @@ async def wait_redis() -> None:
         logger.error(e)
         raise
     finally:
-        await client.aclose()  # type: ignore  # noqa: PGH003
+        await client.aclose()  # type: ignore[attr-defined]
 
 
 async def main() -> None:

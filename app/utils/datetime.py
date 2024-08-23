@@ -168,7 +168,7 @@ def generate_week_items() -> list[tuple[str, dt.datetime]]:
     next_six_days = [today + dt.timedelta(days=day) for day in range(1, 7)]
 
     _day_names = [dt.datetime.strftime(date, "%d.%m") for date in next_six_days]
-    weekdays = [translate_weekday(dt.datetime.strftime(date, "%w")) for date in next_six_days]  # type: ignore  # noqa: PGH003
+    weekdays = [translate_weekday(dt.datetime.strftime(date, "%w")) for date in next_six_days]  # type: ignore[arg-type]
     day_names = [f"{pair[0]} ({pair[1]})" for pair in zip(_day_names, weekdays, strict=True)]
 
     return [(TODAY_TEXT, today)] + list(zip(day_names, next_six_days, strict=True))

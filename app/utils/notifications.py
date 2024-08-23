@@ -45,7 +45,7 @@ def create(scheduler: AsyncIOScheduler, booking: Booking, schedule_on: ScheduleO
     if is_fired_in_past(booking, schedule_on, minutes_before):
         return
 
-    scheduler.add_job(  # type: ignore  # noqa: PGH003
+    scheduler.add_job(
         send_message_job,
         DateTrigger(target_time - dt.timedelta(minutes=minutes_before), target_time.tzinfo),
         id=job_id,
@@ -58,7 +58,7 @@ def create(scheduler: AsyncIOScheduler, booking: Booking, schedule_on: ScheduleO
 def delete(scheduler: AsyncIOScheduler, booking: Booking, schedule_on: ScheduleOn, minutes_before: int) -> None:
     if is_fired_in_past(booking, schedule_on, minutes_before):
         return
-    scheduler.remove_job(get_job_prefix(schedule_on, booking.user_id, booking.id))  # type: ignore  # noqa: PGH003
+    scheduler.remove_job(get_job_prefix(schedule_on, booking.user_id, booking.id))
     # тут логгинг не нужен, APScheduler сам пишет job_id при удалении
 
 

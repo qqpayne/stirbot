@@ -10,6 +10,11 @@
             120
         ],
     },
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUnknownMemberType": "none",
+        "reportUnknownVariableType": "none",
+        "reportMissingTypeStubs": "information"
+    },
     "ruff.organizeImports": true,
     "ruff.fixAll": true,
     "python.analysis.typeCheckingMode": "strict",
