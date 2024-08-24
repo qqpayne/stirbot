@@ -1,3 +1,3 @@
-from .auth import CalbackAdminFilter, NotAUserFilter, UserFilter
+from .auth import NotAUserFilter, UserFilter
 
-__all__ = ["UserFilter", "NotAUserFilter", "CalbackAdminFilter"]
+__all__ = ["UserFilter", "NotAUserFilter"]

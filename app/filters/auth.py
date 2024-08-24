@@ -1,5 +1,5 @@
 from aiogram.filters import BaseFilter
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import Message
 from loguru import logger
 
 from app.database import Database
@@ -42,21 +42,3 @@ class UserFilter(BaseFilter):
         await update_admin_info(user, db, message.from_user)
 
         return {"user_data": user}
-
-
-class CalbackAdminFilter(BaseFilter):
-    async def __call__(self, callback: CallbackQuery, db: Database) -> bool:
-        user = await db.user.get(callback.from_user.id)
-        if user is None:
-            logger.error(
-                f"Received callback from non-authenticated user {callback.from_user.full_name} id={callback.from_user.id}"  # noqa: E501
-            )
-            return False
-
-        if not user.is_admin:
-            logger.error(
-                f"Received callback from non-admin user {callback.from_user.full_name} id={callback.from_user.id}"
-            )
-            return False
-
-        return True

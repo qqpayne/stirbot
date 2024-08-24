@@ -1,4 +1,4 @@
-from .booking import BookingFSM, setup_booking_dialog
-from .notifications import NotificationFSM, setup_notifications_dialog
+from .admin import AdminFSM, setup_admin_dialog
+from .user import UserFSM, setup_user_dialog
 
-__all__ = ["BookingFSM", "setup_booking_dialog", "NotificationFSM", "setup_notifications_dialog"]
+__all__ = ["UserFSM", "setup_user_dialog", "AdminFSM", "setup_admin_dialog"]

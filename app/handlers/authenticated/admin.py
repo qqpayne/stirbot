@@ -1,34 +1,27 @@
 from aiogram import Bot, F, Router, types
-from aiogram.filters import Command, CommandStart, MagicData
+from aiogram.filters import Command, MagicData
 from loguru import logger
 
 from app.database import Database
-from app.filters import CalbackAdminFilter
-from app.keyboards.new_user import NewUserAction, NewUserCBF, new_user_kb
+from app.dialogs import setup_admin_dialog
+from app.keyboards.new_user import NewUserAction, NewUserCBF
 from app.strings import (
     ADMIN_HELP_TEXT,
-    ADMIN_USER_START_TEXT,
     NEW_USER_ALREADY_APPROVED_TEXT,
     NEW_USER_ALREADY_DENIED_TEXT,
     NEW_USER_APPROVED_TEXT,
     NEW_USER_DENIED_TEXT,
     NEW_USER_ERROR_TEXT,
-    NEW_USER_TEXT,
-    NO_NEW_USERS_TEXT,
     NOTIFY_APPROVED_USER_TEXT,
     NOTIFY_DENIED_USER_TEXT,
 )
+from app.utils.admin import list_new_users
 
 router = Router(name="admin")
 router.message.filter(MagicData(F.user_data.is_admin))
+router.callback_query.filter(MagicData(F.user_data.is_admin))
 
-
-@router.message(CommandStart())
-async def start_handler(message: types.Message) -> None:
-    """
-    Приветствует администратора.
-    """
-    await message.answer(ADMIN_USER_START_TEXT)
+setup_admin_dialog(router)
 
 
 @router.message(Command("help"))
@@ -44,18 +37,10 @@ async def new_users_command_handler(message: types.Message, db: Database) -> Non
     """
     Отправляет администратору сообщения с ждущими регистрации аккаунтами с инлайн-кнопками для подтверждения / отмены.
     """
-    pending = await db.user.get_all_unapproved()
-
-    if len(pending) == 0:
-        await message.answer(NO_NEW_USERS_TEXT)
-        return
-
-    for user in pending:
-        logger.info(f"Preparing new_users_kb for user with id={user.id}")
-        await message.answer(NEW_USER_TEXT.format(user_name=user.clickable_name), reply_markup=new_user_kb(user.id))
+    await list_new_users(message, db)
 
 
-@router.callback_query(NewUserCBF.filter(), CalbackAdminFilter())
+@router.callback_query(NewUserCBF.filter())
 async def new_users_callback_handler(
     callback: types.CallbackQuery, callback_data: NewUserCBF, db: Database, bot: Bot
 ) -> None:

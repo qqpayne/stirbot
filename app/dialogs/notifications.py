@@ -15,7 +15,6 @@ from app.database import Database
 from app.database.models import User
 from app.strings import (
     BACK_TEXT,
-    EXIT_TEXT,
     MINUTES_TEXT,
     NOTIFICATIONS_CONFIGURE_BEFORE_END_SWITCH_TEXT,
     NOTIFICATIONS_CONFIGURE_BEFORE_END_TEXT,
@@ -41,11 +40,6 @@ class ConfigureAction(Enum):
 class NotificationFSM(StatesGroup):
     main = State()
     configure = State()
-
-
-async def on_exit(callback: CallbackQuery, _: Any, __: DialogManager) -> None:  # noqa: ANN401
-    if isinstance(callback.message, Message):
-        await callback.message.delete()
 
 
 async def current_config_getter(user_data: User, **_: dict[str, Any]) -> dict[str, int | None]:
@@ -132,7 +126,7 @@ notifications_dialog = Dialog(
             state=NotificationFSM.configure,
             on_click=on_configure_clicked,
         ),
-        Cancel(Const(EXIT_TEXT), on_click=on_exit),
+        Cancel(Const(BACK_TEXT)),
         state=NotificationFSM.main,
         getter=current_config_getter,
     ),

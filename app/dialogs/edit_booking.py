@@ -91,7 +91,7 @@ edit_booking_dialog = Dialog(
             )
         ),
         SwitchTo(
-            Const("❌ " + EDIT_BOOKING_DELETE_ACTION_TEXT),
+            Const(EDIT_BOOKING_DELETE_ACTION_TEXT),
             id="del_booking",
             state=EditBookingFSM.removing_booking,
             when=F["editable_bookings"].len() > 0,
