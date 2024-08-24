@@ -4,6 +4,7 @@ from sqlalchemy import select
 
 from .base import CRUDBase
 from app.database.models.user import User
+from app.exceptions import ObjectNotFoundError
 
 
 class UserCreateData(TypedDict):
@@ -37,8 +38,7 @@ class CRUDUser(CRUDBase[User, UserCreateData, UserUpdateData]):
     async def approve(self, id: int) -> User:  # noqa: A002
         user = await self.get(id)
         if user is None:
-            msg = "user with given id is absent"
-            raise ValueError(msg)
+            raise ObjectNotFoundError
 
         user.is_approved = True
         await self.sess.commit()
@@ -47,8 +47,7 @@ class CRUDUser(CRUDBase[User, UserCreateData, UserUpdateData]):
     async def make_admin(self, id: int) -> User:  # noqa: A002
         user = await self.get(id)
         if user is None:
-            msg = "user with given id is absent"
-            raise ValueError(msg)
+            raise ObjectNotFoundError
 
         user.is_admin = True
         await self.sess.commit()
@@ -57,8 +56,7 @@ class CRUDUser(CRUDBase[User, UserCreateData, UserUpdateData]):
     async def demote_admin(self, id: int) -> User:  # noqa: A002
         user = await self.get(id)
         if user is None:
-            msg = "user with given id is absent"
-            raise ValueError(msg)
+            raise ObjectNotFoundError
 
         user.is_admin = False
         await self.sess.commit()

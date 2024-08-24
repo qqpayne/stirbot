@@ -2,7 +2,6 @@ from aiogram import types
 from loguru import logger
 
 from app.database import Database
-from app.database.models import User
 from app.keyboards.new_user import new_user_kb
 from app.strings import (
     NEW_USER_TEXT,
@@ -26,16 +25,6 @@ async def get_admin_link(db: Database) -> str:
         raise ValueError("unreachable")  # noqa: EM101
 
     return "@" + admin.username
-
-
-# Так как ссылки по айди не работают, то нужно отображать username админов.
-# Эта информация может меняться, поэтому нужно иногда её обновлять. Это удобно делать в аутентификационном фильтре.
-async def update_admin_info(user: User, db: Database, new_info: types.User) -> None:
-    if user.is_admin:
-        logger.debug(f"Updating admin {user} info")
-        await db.user.update(
-            user.id, {"username": new_info.username, "first_name": new_info.first_name, "last_name": new_info.last_name}
-        )
 
 
 async def list_new_users(message: types.Message, db: Database) -> None:
