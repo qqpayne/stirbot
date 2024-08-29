@@ -12,6 +12,7 @@ class EnvBaseSettings(BaseSettings):
 class BotSettings(EnvBaseSettings):
     BOT_TOKEN: str
     TIMEZONE: str
+    USE_AUTHENTICATION: bool
 
     @field_validator("TIMEZONE")
     @classmethod

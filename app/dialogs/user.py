@@ -47,6 +47,16 @@ def is_admin(data: dict[str, Any], widget: Any, dialog_manager: DialogManager) -
     return user.is_admin
 
 
+async def rewrite_user_data(_: dict[str, Any], dialog_manager: DialogManager) -> None:
+    """
+    Хук, перехватывающий 'user_data' в 'start_data' диалогового мэнеджера и переписывающий данные в 'middleware_data'.
+    Необходимо для возможности начать диалог не из под аутентификационного фильтра.
+    """
+    if "user_data" in dialog_manager.start_data:
+        user_data = dialog_manager.start_data.pop("user_data")
+        dialog_manager.middleware_data["user_data"] = user_data
+
+
 rules_dialog = Dialog(Window(Const(RULES_TEXT), Cancel(Const(BACK_TEXT)), state=RulesFSM.main))
 report_dialog = Dialog(
     Window(Format(REPORT_TEXT), Cancel(Const(BACK_TEXT)), getter=admin_link_getter, state=ReportFSM.main)
@@ -67,6 +77,7 @@ user_dialog = Dialog(
         ),
         state=UserFSM.main,
     ),
+    on_start=rewrite_user_data,
     launch_mode=LaunchMode.ROOT,
 )
 
