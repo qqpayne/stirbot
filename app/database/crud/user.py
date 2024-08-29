@@ -12,6 +12,7 @@ class UserCreateData(TypedDict):
     first_name: str
     last_name: str | None
     username: str | None
+    additional_info: str | None
     notify_before_start_mins: int | None
     notify_before_end_mins: int | None
     is_approved: bool
@@ -21,6 +22,7 @@ class UserUpdateData(TypedDict, total=False):
     first_name: str
     last_name: str | None
     username: str | None
+    additional_info: str | None
     notify_before_start_mins: int | None
     notify_before_end_mins: int | None
 

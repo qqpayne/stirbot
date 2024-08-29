@@ -13,6 +13,7 @@ class User(Base):
     first_name: Mapped[str]
     last_name: Mapped[str | None]
     username: Mapped[str | None]
+    additional_info: Mapped[str | None]
     created_at: Mapped[created_at]
 
     is_admin: Mapped[bool] = mapped_column(default=False)

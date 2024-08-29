@@ -52,7 +52,7 @@ async def rewrite_user_data(_: dict[str, Any], dialog_manager: DialogManager) ->
     Хук, перехватывающий 'user_data' в 'start_data' диалогового мэнеджера и переписывающий данные в 'middleware_data'.
     Необходимо для возможности начать диалог не из под аутентификационного фильтра.
     """
-    if "user_data" in dialog_manager.start_data:
+    if dialog_manager.start_data is not None and "user_data" in dialog_manager.start_data:  # type: ignore[reportUnnecessaryComparison]
         user_data = dialog_manager.start_data.pop("user_data")
         dialog_manager.middleware_data["user_data"] = user_data
 

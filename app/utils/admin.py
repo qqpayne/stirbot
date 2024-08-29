@@ -39,4 +39,9 @@ async def list_new_users(message: types.Message, db: Database) -> None:
 
     for user in pending:
         logger.info(f"Preparing new_users_kb for user with id={user.id}")
-        await message.answer(NEW_USER_TEXT.format(user_name=user.clickable_name), reply_markup=new_user_kb(user.id))
+        user_info = (
+            user.clickable_name + f" ({user.additional_info})"
+            if user.additional_info is not None
+            else user.clickable_name
+        )
+        await message.answer(NEW_USER_TEXT.format(user=user_info), reply_markup=new_user_kb(user.id))
