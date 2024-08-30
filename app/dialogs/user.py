@@ -11,8 +11,10 @@ from app.database.models import User
 from app.dialogs.admin import AdminFSM
 from app.dialogs.booking import BookingFSM, setup_booking_dialog
 from app.dialogs.notifications import NotificationFSM, setup_notifications_dialog
+from app.dialogs.user_actions import ActionsFSM, action_list_getter, actions_dialog
 from app.dialogs.user_rules import RulesFSM, rules_dialog, rules_list_getter
 from app.strings import (
+    ACTIONS_MENU_BUTTON_TEXT,
     ADMIN_MENU_BUTTON_TEXT,
     BACK_TEXT,
     BOOKING_MENU_BUTTON_TEXT,
@@ -62,6 +64,7 @@ user_dialog = Dialog(
         Const(USE_MENU_BUTTONS_TEXT),
         Group(
             Start(text=Const(BOOKING_MENU_BUTTON_TEXT), id="booking", state=BookingFSM.main),
+            Start(text=Const(ACTIONS_MENU_BUTTON_TEXT), id="actions", state=ActionsFSM.main, when=F["actions"]),
             Start(text=Const(NOTIFICATIONS_MENU_BUTTON_TEXT), id="notifications", state=NotificationFSM.main),
             Start(text=Const(RULES_MENU_BUTTON_TEXT), id="rules", state=RulesFSM.main, when=F["rules"]),
             Start(text=Const(FEEDBACK_MENU_BUTTON_TEXT), id="feedbak", state=ReportFSM.main),
@@ -71,7 +74,7 @@ user_dialog = Dialog(
         # но все последующие коллбэки будут отклонены фильтром в handlers/authenticated/admin
         Start(text=Const(ADMIN_MENU_BUTTON_TEXT), id="admin", state=AdminFSM.main, when=is_admin),
         state=UserFSM.main,
-        getter=rules_list_getter,  # необходим для скрытия кнопки с правилами при их отсутствии
+        getter=[rules_list_getter, action_list_getter],  # необходимо для скрытия соответствующих кнопок
     ),
     on_start=rewrite_user_data,
     launch_mode=LaunchMode.ROOT,
@@ -79,6 +82,6 @@ user_dialog = Dialog(
 
 
 def setup_user_dialog(router: Router) -> None:
-    router.include_routers(user_dialog, rules_dialog, report_dialog)
+    router.include_routers(user_dialog, rules_dialog, report_dialog, actions_dialog)
     setup_booking_dialog(router)
     setup_notifications_dialog(router)

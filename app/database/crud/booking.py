@@ -36,3 +36,16 @@ class CRUDBooking(CRUDBase[Booking, BookingCreateData, BookingUpdateData]):
         query = select(self.model).where((self.model.user_id == user_id) & (self.model.end >= by_time))
         result = await self.sess.execute(query)
         return list(result.scalars())
+
+    async def get_user_ongoing_in_place(self, user_id: int, place_id: str) -> Booking | None:
+        query = select(self.model).where(
+            (self.model.user_id == user_id)
+            & (self.model.place_id == place_id)
+            & (self.model.end >= dt.datetime.now(dt.timezone.utc))
+            & (self.model.start <= dt.datetime.now(dt.timezone.utc))
+        )
+        result = await self.sess.execute(query)
+        bookings = list(result.scalars())
+        if len(bookings) == 0:
+            return None
+        return bookings[0]
