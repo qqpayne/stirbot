@@ -28,7 +28,7 @@ services:
   redis:
     image: redis:7-alpine
     env_file:
-      - ../.env
+      - .env
     command: /bin/sh -c
             'if [ -n "$${REDIS_PASSWORD}" ];
               then redis-server --port "$${REDIS_PORT}" --requirepass "$${REDIS_PASSWORD}";
