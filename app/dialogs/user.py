@@ -1,6 +1,6 @@
 from typing import Any
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.fsm.state import State, StatesGroup
 from aiogram_dialog import Dialog, DialogManager, LaunchMode, Window
 from aiogram_dialog.widgets.kbd import Cancel, Group, Start
@@ -11,6 +11,7 @@ from app.database.models import User
 from app.dialogs.admin import AdminFSM
 from app.dialogs.booking import BookingFSM, setup_booking_dialog
 from app.dialogs.notifications import NotificationFSM, setup_notifications_dialog
+from app.dialogs.user_rules import RulesFSM, rules_dialog, rules_list_getter
 from app.strings import (
     ADMIN_MENU_BUTTON_TEXT,
     BACK_TEXT,
@@ -19,17 +20,12 @@ from app.strings import (
     NOTIFICATIONS_MENU_BUTTON_TEXT,
     REPORT_TEXT,
     RULES_MENU_BUTTON_TEXT,
-    RULES_TEXT,
     USE_MENU_BUTTONS_TEXT,
 )
 from app.utils.admin import get_admin_link
 
 
 class UserFSM(StatesGroup):
-    main = State()
-
-
-class RulesFSM(StatesGroup):
     main = State()
 
 
@@ -57,7 +53,6 @@ async def rewrite_user_data(_: dict[str, Any], dialog_manager: DialogManager) ->
         dialog_manager.middleware_data["user_data"] = user_data
 
 
-rules_dialog = Dialog(Window(Const(RULES_TEXT), Cancel(Const(BACK_TEXT)), state=RulesFSM.main))
 report_dialog = Dialog(
     Window(Format(REPORT_TEXT), Cancel(Const(BACK_TEXT)), getter=admin_link_getter, state=ReportFSM.main)
 )
@@ -68,14 +63,15 @@ user_dialog = Dialog(
         Group(
             Start(text=Const(BOOKING_MENU_BUTTON_TEXT), id="booking", state=BookingFSM.main),
             Start(text=Const(NOTIFICATIONS_MENU_BUTTON_TEXT), id="notifications", state=NotificationFSM.main),
-            Start(text=Const(RULES_MENU_BUTTON_TEXT), id="rules", state=RulesFSM.main),
+            Start(text=Const(RULES_MENU_BUTTON_TEXT), id="rules", state=RulesFSM.main, when=F["rules"]),
             Start(text=Const(FEEDBACK_MENU_BUTTON_TEXT), id="feedbak", state=ReportFSM.main),
-            # NOTE: получить доступ к первому окну AdminFSM можно подделав коллбэк и не обладая админскими привелегиями
-            # но все последующие коллбэки будут отклонены фильтром в handlers/authenticated/admin
-            Start(text=Const(ADMIN_MENU_BUTTON_TEXT), id="admin", state=AdminFSM.main, when=is_admin),
             width=2,
         ),
+        # NOTE: получить доступ к первому окну AdminFSM можно подделав коллбэк и не обладая админскими привелегиями
+        # но все последующие коллбэки будут отклонены фильтром в handlers/authenticated/admin
+        Start(text=Const(ADMIN_MENU_BUTTON_TEXT), id="admin", state=AdminFSM.main, when=is_admin),
         state=UserFSM.main,
+        getter=rules_list_getter,  # необходим для скрытия кнопки с правилами при их отсутствии
     ),
     on_start=rewrite_user_data,
     launch_mode=LaunchMode.ROOT,
