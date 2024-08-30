@@ -3,7 +3,7 @@ from typing import Any
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.kbd import Back, Cancel, Column, Group, Select
+from aiogram_dialog.widgets.kbd import Back, Cancel, Group, Select
 from aiogram_dialog.widgets.text import Const, Format
 
 from app.database import Database
@@ -57,15 +57,13 @@ rules_dialog = Dialog(
     Window(
         Const(RULES_CHOICE_ONE_TEXT),
         Group(
-            Column(
-                Select(
-                    Format("{item.title}"),
-                    items="rules",
-                    type_factory=int,
-                    item_id_getter=lambda x: x.id,
-                    id="s_rules",
-                    on_click=on_rule_selected,
-                )
+            Select(
+                Format("{item.title}"),
+                items="rules",
+                type_factory=int,
+                item_id_getter=lambda x: x.id,
+                id="s_rules",
+                on_click=on_rule_selected,
             ),
             width=2,
         ),
