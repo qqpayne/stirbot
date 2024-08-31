@@ -298,9 +298,9 @@ choose_interval_window = Window(
         Format("— {item.start.hour:02d}:{item.start.minute:02d} - {item.end.hour:02d}:{item.end.minute:02d}"),
         items="free_intervals",
     ),
-    Format(NEW_BOOKING_MINIMAL_INTERVAL_TEXT, when=F["free_intervals"].len() > 0 and F["minimal_interval"] > 0),
-    Format(NEW_BOOKING_QUOTA_TEXT, when=F["free_intervals"].len() > 0 and F["place_quota"]),
-    Format("{place_comment}", when=F["free_intervals"].len() > 0 and F["place_comment"].len() > 0),
+    Format(NEW_BOOKING_MINIMAL_INTERVAL_TEXT, when=(F["free_intervals"].len() > 0) & (F["minimal_interval"] > 0)),
+    Format(NEW_BOOKING_QUOTA_TEXT, when=(F["free_intervals"].len() > 0) & F["place_quota"]),
+    Format("{place_comment}", when=(F["free_intervals"].len() > 0) & (F["place_comment"].len() > 0)),
     Const("\n" + NEW_BOOKING_INTERVAL_HELP_TEXT, when=choosable_interval_predicate),
     TextInput(
         id="interval",

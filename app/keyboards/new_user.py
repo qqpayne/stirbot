@@ -19,7 +19,7 @@ class NewUserCBF(CallbackData, prefix="new_user"):
 
 def new_user_kb(uid: int) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="✅ " + NEW_USER_APPROVE_TEXT, callback_data=NewUserCBF(action=NewUserAction.approve, id=uid))
-    keyboard.button(text="❌ " + NEW_USER_DENY_TEXT, callback_data=NewUserCBF(action=NewUserAction.deny, id=uid))
+    keyboard.button(text=NEW_USER_APPROVE_TEXT, callback_data=NewUserCBF(action=NewUserAction.approve, id=uid))
+    keyboard.button(text=NEW_USER_DENY_TEXT, callback_data=NewUserCBF(action=NewUserAction.deny, id=uid))
     keyboard.adjust(2)
     return keyboard.as_markup()

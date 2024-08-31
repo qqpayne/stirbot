@@ -13,6 +13,7 @@ from app.actions.base import Action
 from app.database import Database
 from app.database.models import Place
 from app.strings import (
+    ACTION_EXECUTION_CONDITION_EMOJI,
     BACK_TEXT,
     CHOOSE_ACTION_TEXT,
     EXECUTION_ACTION_TEXT,
@@ -112,7 +113,10 @@ actions_dialog = Dialog(
     ),
     Window(
         Format("<b>{action.title}</b>\n{action.description}"),
-        Format("\n{action.execution_conditions}", when=F["can_execute"].is_not(True)),
+        Format(
+            "\n" + ACTION_EXECUTION_CONDITION_EMOJI + " {action.execution_conditions}",
+            when=F["can_execute"].is_not(True),
+        ),
         Button(Const(EXECUTION_ACTION_TEXT), id="execute_action", when="can_execute", on_click=on_execute),
         Back(Const(BACK_TEXT)),
         state=ActionsFSM.action_view,
