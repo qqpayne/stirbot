@@ -7,11 +7,12 @@ from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Column, Group, Select
 from aiogram_dialog.widgets.text import Const, Format
+from loguru import logger
 
 from app.actions import ACTION_LIST
 from app.actions.base import Action
 from app.database import Database
-from app.database.models import Place
+from app.database.models import Place, User
 from app.strings import (
     ACTION_EXECUTION_CONDITION_EMOJI,
     BACK_TEXT,
@@ -60,9 +61,13 @@ async def on_action_selected(_: CallbackQuery, __: Any, manager: DialogManager, 
 
 async def action_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> dict[str, Action | bool | None]:
     selected_action_id = dialog_manager.dialog_data["selected_action_id"]
+    user: User = dialog_manager.middleware_data["user_data"]
+    assert isinstance(user, User)  # noqa: S101
+
     try:
         action = [action for action in ACTION_LIST if action.id == selected_action_id][0]
     except IndexError:
+        logger.warning(f"Attempted to select unexisting action {selected_action_id} by {user}")
         await dialog_manager.switch_to(ActionsFSM.main)
         return {"action": None, "can_execute": False}
     return {"action": action, "can_execute": await action.can_execute(dialog_manager)}
@@ -70,10 +75,15 @@ async def action_getter(dialog_manager: DialogManager, **_: dict[str, Any]) -> d
 
 async def on_execute(callback: CallbackQuery, _: Any, dialog_manager: DialogManager) -> None:  # noqa: ANN401
     action_info = await action_getter(dialog_manager)
+    user: User = dialog_manager.middleware_data["user_data"]
+    assert isinstance(user, User)  # noqa: S101
+
     if isinstance(action_info["action"], Action):
+        logger.info(f"Executing {action_info['action'].id} on {user} request")
         await action_info["action"](callback, dialog_manager)
         await dialog_manager.done()
     else:
+        logger.warning(f"Attempted to execute non-action {action_info['action']} on {user} request")
         await dialog_manager.switch_to(ActionsFSM.choose_action)
 
 

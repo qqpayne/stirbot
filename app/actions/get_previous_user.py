@@ -2,6 +2,7 @@ import datetime as dt
 
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager, ShowMode
+from loguru import logger
 
 from .base import Action
 from app.database import Database
@@ -51,7 +52,6 @@ class GetPreviousUserAction(Action):
         ongoing_booking = await db.booking.get_user_ongoing_in_place(user.id, place_id)
         return ongoing_booking is not None
 
-    # TODO: strings.py
     async def __call__(self, callback_query: CallbackQuery, dialog_manager: DialogManager) -> None:  # noqa: ARG002
         place_id: str = dialog_manager.dialog_data["place"]
         user: User = dialog_manager.middleware_data["user_data"]
@@ -66,6 +66,7 @@ class GetPreviousUserAction(Action):
 
         ongoing_booking = await db.booking.get_user_ongoing_in_place(user.id, place_id)
         if ongoing_booking is None:
+            logger.warning(f"User {user} attempted to get previous user without active booking")
             await callback_query.message.edit_text(ERROR_TEXT.format(error=GET_PREVIOUS_USER_ACTION_ACCESS_ERROR_TEXT))
             dialog_manager.show_mode = ShowMode.SEND
             return
@@ -80,12 +81,14 @@ class GetPreviousUserAction(Action):
         ]
         already_ended_booking.sort(key=lambda booking: booking.end)
         if len(already_ended_booking) == 0:
+            logger.info(f"User {user} is looking for user owning last booking but finds nothing")
             await callback_query.message.edit_text(GET_PREVIOUS_USER_ACTION_NO_PREVIOUS_TEXT)
             dialog_manager.show_mode = ShowMode.SEND
             return
 
         last_booking = already_ended_booking[-1]
         last_user = await last_booking.awaitable_attrs.user
+        logger.info(f"User {user} is looking for user owning booking {last_booking}")
         # У пользователя может быть не указан username или заблокированы сообщения от не-контактов.
         # Так что лучше отправить сообщение еще и тому, кого ищут
         await bot.send_message(
