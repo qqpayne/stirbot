@@ -62,10 +62,13 @@ report_dialog = Dialog(
 user_dialog = Dialog(
     Window(
         Const(USE_MENU_BUTTONS_TEXT),
+        Start(text=Const(BOOKING_MENU_BUTTON_TEXT), id="booking", state=BookingFSM.main),
         Group(
-            Start(text=Const(BOOKING_MENU_BUTTON_TEXT), id="booking", state=BookingFSM.main),
             Start(text=Const(ACTIONS_MENU_BUTTON_TEXT), id="actions", state=ActionsFSM.main, when=F["actions"]),
             Start(text=Const(NOTIFICATIONS_MENU_BUTTON_TEXT), id="notifications", state=NotificationFSM.main),
+            width=2,
+        ),
+        Group(
             Start(text=Const(RULES_MENU_BUTTON_TEXT), id="rules", state=RulesFSM.main, when=F["rules"]),
             Start(text=Const(FEEDBACK_MENU_BUTTON_TEXT), id="feedbak", state=ReportFSM.main),
             width=2,
