@@ -1,4 +1,5 @@
-FROM python:3.10.13-alpine3.18
+# syntax=docker.io/docker/dockerfile:1.7-labs
+FROM python:3.10.13-slim-bullseye
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -9,15 +10,27 @@ ENV POETRY_NO_INTERACTION=1 \
 
 WORKDIR /app
 
-COPY . .
+COPY poetry.lock pyproject.toml .
 
-RUN pip install --no-cache-dir "poetry==$POETRY_VERSION" \
+RUN apt-get update \
+    && apt-get install -y curl build-essential libffi-dev libssl-dev python3-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && . "$HOME/.cargo/env" \
+    && pip install --no-cache-dir "poetry==$POETRY_VERSION" \
     && poetry install --without dev --no-root \
+    && pip install --no-cache-dir greenlet \
     && pip uninstall -y poetry \
     && rm -rf /home/appuser/.cache \
     && rm -rf $POETRY_CACHE_DIR \
-    && adduser -D appuser \
-    && chown -R appuser:appuser .
+    && apt-get purge -y build-essential libffi-dev libssl-dev python3-dev pkg-config \
+    && apt-get autoremove -y \
+    && rm -rf "$HOME/.cargo" \
+    && rm -rf "$HOME/.rustup"
+
+COPY --exclude=poetry.lock --exclude=pyproject.toml . .
+
+RUN adduser --disabled-password appuser && chown -R appuser:appuser .
 
 USER appuser
 
