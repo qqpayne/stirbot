@@ -6,7 +6,9 @@ from aiogram.fsm.storage.redis import RedisStorage
 
 from app.config import settings
 
-bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(
+    token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True)
+)
 # настройка KeyBuilder нужна для aiogram-dialog
 storage = RedisStorage.from_url(settings.redis_url, key_builder=DefaultKeyBuilder(with_destiny=True))
 dp = Dispatcher(storage=storage)
