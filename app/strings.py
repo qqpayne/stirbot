@@ -45,6 +45,11 @@ ACTIONS_MENU_BUTTON_TEXT = "⚡️ Действия"
 
 APPROVE_USERS_BUTTON_TEXT = "🛂 Подтверждение пользователей"
 
+SEND_MASS_MESSAGE_BUTTON_TEXT = "✉️ Отправить сообщение"
+SEND_MASS_MESSAGE_INPUT_TEXT = "Введите текст сообщения для рассылки:"
+SEND_MASS_MESSAGE_CONFIRMATION_TEXT = "Отправить сообщение всем пользователям?"
+SEND_MASS_MESSAGE_CONFIRM_BUTTON_TEXT = "Да"
+
 RULES_CHOICE_ONE_TEXT = "Выберите интересующие вас правила:"
 
 BOOKING_CHOOSE_ACTION_TEXT = "Выберите действие:"

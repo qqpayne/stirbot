@@ -29,6 +29,15 @@ async def get_admin_link(db: Database) -> str:
     return "@" + admin.username
 
 
+async def send_mass_message(db: Database, text: str) -> None:
+    users = await db.user.get_all()
+    for user in users:
+        try:
+            await bot.send_message(user.id, text)
+        except Exception as e:  # noqa: PERF203, BLE001
+            logger.error(f"Failed to send message to {user.id}: {e}")
+
+
 async def list_new_users(message: types.Message, db: Database) -> None:
     """
     Отправляет администратору сообщения с ждущими регистрации аккаунтами с инлайн-кнопками для подтверждения / отмены.

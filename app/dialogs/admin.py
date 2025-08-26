@@ -4,12 +4,13 @@ from aiogram import Router
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, ShowMode, Window
-from aiogram_dialog.widgets.kbd import Button, Cancel, Group
+from aiogram_dialog.widgets.kbd import Button, Cancel, Group, Start
 from aiogram_dialog.widgets.text import Const
 from loguru import logger
 
 from app.database import Database
-from app.strings import APPROVE_USERS_BUTTON_TEXT, BACK_TEXT, USE_MENU_BUTTONS_TEXT
+from app.dialogs.admin_mailing import AdminMessageFSM, admin_mailing_dialog
+from app.strings import APPROVE_USERS_BUTTON_TEXT, BACK_TEXT, SEND_MASS_MESSAGE_BUTTON_TEXT, USE_MENU_BUTTONS_TEXT
 from app.utils.admin import list_new_users
 
 
@@ -33,7 +34,11 @@ async def on_approve_users(callback: CallbackQuery, _: Any, manager: DialogManag
 admin_dialog = Dialog(
     Window(
         Const(USE_MENU_BUTTONS_TEXT),
-        Group(Button(Const(APPROVE_USERS_BUTTON_TEXT), id="approve_users", on_click=on_approve_users), width=2),
+        Group(
+            Button(Const(APPROVE_USERS_BUTTON_TEXT), id="approve_users", on_click=on_approve_users),
+            Start(Const(SEND_MASS_MESSAGE_BUTTON_TEXT), id="send_message", state=AdminMessageFSM.enter_message),
+            width=1,
+        ),
         Cancel(Const(BACK_TEXT)),
         state=AdminFSM.main,
     ),
@@ -41,4 +46,4 @@ admin_dialog = Dialog(
 
 
 def setup_admin_dialog(router: Router) -> None:
-    router.include_routers(admin_dialog)
+    router.include_routers(admin_dialog, admin_mailing_dialog)
