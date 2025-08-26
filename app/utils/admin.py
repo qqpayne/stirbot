@@ -31,6 +31,7 @@ async def get_admin_link(db: Database) -> str:
 
 async def send_mass_message(db: Database, text: str) -> None:
     users = await db.user.get_all()
+    logger.info(f"Sending message to {len(users)} users")
     for user in users:
         try:
             await bot.send_message(user.id, text)

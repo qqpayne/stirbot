@@ -6,6 +6,7 @@ from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Group, Next
 from aiogram_dialog.widgets.text import Const
+from loguru import logger
 
 from app.database import Database
 from app.strings import (
@@ -22,11 +23,12 @@ class AdminMessageFSM(StatesGroup):
     confirm_send = State()
 
 
-async def on_confirm_send(__: CallbackQuery, _: Any, manager: DialogManager) -> None:  # noqa: ANN401
+async def on_confirm_send(callback: CallbackQuery, _: Any, manager: DialogManager) -> None:  # noqa: ANN401
     db: Database = manager.middleware_data["db"]
     text: str = manager.find("text_input").get_value()  # pyright: ignore[reportOptionalMemberAccess]
     assert isinstance(db, Database)  # noqa: S101
     assert isinstance(text, str)  # noqa: S101
+    logger.info(f"Admin with tg_id:{callback.from_user.id} initiated mass mailing")
     await send_mass_message(db, text)
     await manager.done()
 
