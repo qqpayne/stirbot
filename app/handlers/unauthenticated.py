@@ -11,7 +11,7 @@ from app.strings import (
     NOT_A_USER_ERROR_TEXT,
     SIGNUP_TEXT,
 )
-from app.utils.admin import get_admin_link
+from app.utils.admin import get_admin_link, notify_admins_on_signup
 from app.utils.user import register_new_user
 
 router = Router(name="unauthenticated")
@@ -42,8 +42,9 @@ elif settings.USE_AUTHENTICATION:
             await message.answer(NOT_A_USER_ERROR_TEXT)
             return
 
-        await register_new_user(db, message.from_user, approve=False)
+        new_user = await register_new_user(db, message.from_user, approve=False)
         await message.answer(SIGNUP_TEXT.format(admin_link=await get_admin_link(db)))
+        await notify_admins_on_signup(new_user, db)
 
 else:
 

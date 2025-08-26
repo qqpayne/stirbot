@@ -3,7 +3,7 @@ from typing import Any
 from aiogram import Router
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
-from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog import Dialog, DialogManager, ShowMode, Window
 from aiogram_dialog.widgets.kbd import Button, Cancel, Group
 from aiogram_dialog.widgets.text import Const
 from loguru import logger
@@ -27,6 +27,7 @@ async def on_approve_users(callback: CallbackQuery, _: Any, manager: DialogManag
         return
 
     await list_new_users(message, db)
+    manager.show_mode = ShowMode.SEND
 
 
 admin_dialog = Dialog(

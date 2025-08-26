@@ -2,7 +2,9 @@ from aiogram import types
 from loguru import logger
 
 from app.database import Database
+from app.database.models import User
 from app.keyboards.new_user import new_user_kb
+from app.loader import bot
 from app.strings import (
     NEW_USER_TEXT,
     NO_NEW_USERS_TEXT,
@@ -38,10 +40,19 @@ async def list_new_users(message: types.Message, db: Database) -> None:
         return
 
     for user in pending:
-        logger.info(f"Preparing new_users_kb for user with id={user.id}")
-        user_info = (
-            user.clickable_name + f" ({user.additional_info})"
-            if user.additional_info is not None
-            else user.clickable_name
-        )
-        await message.answer(NEW_USER_TEXT.format(user=user_info), reply_markup=new_user_kb(user.id))
+        await send_new_user_kb(message.chat.id, user)
+
+
+async def notify_admins_on_signup(user: User, db: Database) -> None:
+    admins = await db.user.get_admins()
+
+    for admin in admins:
+        await send_new_user_kb(admin.id, user)
+
+
+async def send_new_user_kb(chat_id: int | str, user: User) -> None:
+    logger.info(f"Preparing new_users_kb for user with id={user.id}")
+    user_info = (
+        user.clickable_name + f" ({user.additional_info})" if user.additional_info is not None else user.clickable_name
+    )
+    await bot.send_message(chat_id, NEW_USER_TEXT.format(user=user_info), reply_markup=new_user_kb(user.id))

@@ -18,7 +18,7 @@ from app.strings import (
     SIGNUP_CONFIRM_HELLO_TEXT,
     SIGNUP_TEXT,
 )
-from app.utils.admin import get_admin_link
+from app.utils.admin import get_admin_link, notify_admins_on_signup
 from app.utils.user import register_new_user
 
 
@@ -45,6 +45,7 @@ async def on_confirmation(callback: CallbackQuery, _: Any, manager: DialogManage
             return
         await callback.message.edit_text(SIGNUP_TEXT.format(admin_link=await get_admin_link(db)))
         await manager.done()
+        await notify_admins_on_signup(new_user, db)
     else:
         new_user = await register_new_user(db, callback.from_user, approve=True, additional_info=user_additional)
         if isinstance(callback.message, Message):
